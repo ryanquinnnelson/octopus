@@ -1,2 +1,2 @@
-def get_models(config):
+def get_models(wandb_config):
     return []

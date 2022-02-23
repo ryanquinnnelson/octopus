@@ -60,9 +60,7 @@ class PhaseHandler:
 
     def process_epochs(self, wandb_config, models, model_names, optimizers, optimizer_names, schedulers,
                        scheduler_names,
-                       training,
-                       evaluation,
-                       testing):
+                       phases):
 
         # load checkpoint if necessary
         if self.load_from_checkpoint:
@@ -77,13 +75,13 @@ class PhaseHandler:
             start = time.time()
 
             # train
-            train_stats = training.run_epoch(epoch, self.num_epochs, models, optimizers, wandb_config)
+            train_stats = phases.run_training_epoch(epoch, self.num_epochs, models, optimizers, wandb_config)
 
             # validate
-            val_stats = evaluation.run_epoch(epoch, self.num_epochs, models, wandb_config)
+            val_stats = phases.run_validation_epoch(epoch, self.num_epochs, models, wandb_config)
 
             # testing
-            test_stats = testing.run_epoch(epoch, self.num_epochs, models, wandb_config)
+            test_stats = phases.run_test_epoch(epoch, self.num_epochs, models, wandb_config)
 
             # record end time
             end = time.time()

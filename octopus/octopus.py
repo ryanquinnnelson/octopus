@@ -21,6 +21,8 @@ from octopus.handlers.dataloaderhandler import DataLoaderHandler
 from octopus.handlers.phasehandler import PhaseHandler
 
 import customized.datasets as datasets
+import customized.models as models
+import customized.phases as phases
 
 # execute before loading torch
 os.environ['CUDA_LAUNCH_BLOCKING'] = "1"  # better error tracking from gpu
@@ -144,11 +146,12 @@ class Octopus:
 
         logging.info('octopus has finished setting up the environment.')
 
-    def initialize_model(self):
+    def initialize_models(self):
         logging.info(f'octopus is generating the model...')
 
         # use wandb configs so we can sweep hyperparameters
         config = self.wandbconnector.wandb_config
+        self.models = models.get_models(config)
 
         logging.info(f'octopus finished generating the model.')
 
@@ -197,7 +200,8 @@ class Octopus:
 
         logging.info(f'octopus is finished loading the data.')
 
-    def load_pipeline(self):
+    def setup_phasehandler(self):
+        logging.info(f'octopus is loading the phase handler...')
 
         if self.config.has_option('checkpoint', 'checkpoint_file'):
             checkpoint_file = self.config['checkpoint']['checkpoint_file']
@@ -209,3 +213,39 @@ class Octopus:
 
         self.phasehandler = PhaseHandler(num_epochs, self.devicehandler, self.checkpointhandler, self.schedulerhandler,
                                          self.wandbconnector, load_from_checkpoint, checkpoint_file)
+
+        logging.info(f'octopus is finished loading the phase handler...')
+
+    def run_pipeline(self):
+        """
+        Run training, validation, and test phases of training for all epochs.
+        Note 1:
+        Reason behind moving model to device first:
+        https://stackoverflow.com/questions/66091226/runtimeerror-expected-all-tensors-to-be-on-the-same-device-but-found-at-least
+        Returns: None
+        """
+        logging.info('octopus is running the pipeline...')
+
+        wandb_config = self.wandbconnector.wandb_config
+        models = self.models
+        model_names = self.config['model']['model_names']
+        optimizers = self.optimizers
+        optimizer_names = self.config['model']['optimizer_names']
+        schedulers = self.schedulers
+        scheduler_names = self.config['model']['scheduler_names']
+
+        self.phasehandler.process_epochs(wandb_config, models, model_names, optimizers, optimizer_names, schedulers,
+                                         scheduler_names,
+                                         phases)
+
+        logging.info('octopus has finished running the pipeline.')
+
+    def cleanup(self):
+        """
+        Perform any cleanup steps. Stop wandb logging for the current run to enable multiple runs within a single
+        execution of run_octopus.py.
+        Returns: None
+        """
+        logging.info(f'octopus is cleaning up...')
+        self.wandbconnector.run.finish()  # finish logging for this run
+        logging.info('octopus cleanup complete.')
