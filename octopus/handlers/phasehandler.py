@@ -4,7 +4,8 @@ import time
 
 # TODO: check against early stopping criteria
 class PhaseHandler:
-    def __init__(self, num_epochs, devicehandler, checkpointhandler, schedulerhandler, wandbconnector,
+    def __init__(self, num_epochs, devicehandler, checkpointhandler, schedulerhandler, wandbconnector, training,
+                 validation, testing, model_names, optimizer_names, scheduler_names,
                  load_from_checkpoint,
                  checkpoint_file=None):
         logging.info(f'Initializing phase handler...')
@@ -13,6 +14,12 @@ class PhaseHandler:
         self.checkpointhandler = checkpointhandler
         self.wandbconnector = wandbconnector
         self.schedulerhandler = schedulerhandler
+        self.training = training
+        self.validation = validation
+        self.testing = testing
+        self.model_names = model_names
+        self.optimizer_names = optimizer_names
+        self.scheduler_names = scheduler_names
 
         self.checkpoint_file = checkpoint_file
         self.load_from_checkpoint = load_from_checkpoint
@@ -20,10 +27,10 @@ class PhaseHandler:
         self.first_epoch = 1
         self.num_epochs = num_epochs
 
-    def load_checkpoint(self, models, model_names, optimizers, optimizer_names, schedulers, scheduler_names):
+    def load_checkpoint(self, models, optimizers, schedulers):
         device = self.devicehandler.get_device()
-        checkpoint = self.checkpointhandler.load(self.checkpoint_file, device, models, model_names, optimizers,
-                                                 optimizer_names, schedulers, scheduler_names)
+        checkpoint = self.checkpointhandler.load(self.checkpoint_file, device, models, self.model_names, optimizers,
+                                                 self.optimizer_names, schedulers, self.scheduler_names)
 
         # restore stats
         self.stats = checkpoint['stats']
@@ -58,13 +65,13 @@ class PhaseHandler:
                 epoch_stats_dict[key] = self.stats[key][i]
             self.wandbconnector.log_stats(epoch_stats_dict)
 
-    def process_epochs(self, wandb_config, models, model_names, optimizers, optimizer_names, schedulers,
+    def process_epochs(self, models, model_names, optimizers, optimizer_names, schedulers,
                        scheduler_names,
-                       phases):
+                       train_loader, val_loader, test_loader):
 
         # load checkpoint if necessary
         if self.load_from_checkpoint:
-            self.load_checkpoint(models, model_names, optimizers, optimizer_names, schedulers, scheduler_names)
+            self.load_checkpoint(models, model_names, optimizers)
 
             # submit old stats to wandb to align with other runs
             self.report_previous_stats()
@@ -75,13 +82,13 @@ class PhaseHandler:
             start = time.time()
 
             # train
-            train_stats = phases.run_training_epoch(epoch, self.num_epochs, models, optimizers, wandb_config)
+            train_stats = self.training.run_epoch(epoch, self.num_epochs, models, optimizers, train_loader)
 
             # validate
-            val_stats = phases.run_validation_epoch(epoch, self.num_epochs, models, wandb_config)
+            val_stats = self.validation.run_epoch(epoch, self.num_epochs, models, val_loader)
 
             # testing
-            test_stats = phases.run_test_epoch(epoch, self.num_epochs, models, wandb_config)
+            test_stats = self.testing.run_epoch(epoch, self.num_epochs, models, test_loader)
 
             # record end time
             end = time.time()

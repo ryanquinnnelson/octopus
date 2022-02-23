@@ -210,9 +210,18 @@ class Octopus:
 
         num_epochs = self.config['hyperparameters'].getint('num_epochs')
         load_from_checkpoint = self.config['checkpoint'].getboolean('load_from_checkpoint')
+        model_names = self.config['checkpoint']['model_names']
+        optimizer_names = self.config['checkpoint']['optimizer_names']
+        scheduler_names = self.config['checkpoint']['scheduler_names']
+
+        # use wandb configs so we can sweep hyperparameters
+        wandb_config = self.wandbconnector.wandb_config
+        training, validation, testing = phases.get_phases(wandb_config)
 
         self.phasehandler = PhaseHandler(num_epochs, self.devicehandler, self.checkpointhandler, self.schedulerhandler,
-                                         self.wandbconnector, load_from_checkpoint, checkpoint_file)
+                                         self.wandbconnector, training, validation, testing, model_names,
+                                         optimizer_names, scheduler_names, load_from_checkpoint,
+                                         checkpoint_file)
 
         logging.info(f'octopus is finished loading the phase handler...')
 
@@ -226,17 +235,10 @@ class Octopus:
         """
         logging.info('octopus is running the pipeline...')
 
-        wandb_config = self.wandbconnector.wandb_config
-        models = self.models
-        model_names = self.config['checkpoint']['model_names']
-        optimizers = self.optimizers
-        optimizer_names = self.config['checkpoint']['optimizer_names']
-        schedulers = self.schedulers
-        scheduler_names = self.config['checkpoint']['scheduler_names']
-
-        self.phasehandler.process_epochs(wandb_config, models, model_names, optimizers, optimizer_names, schedulers,
-                                         scheduler_names,
-                                         phases)
+        self.phasehandler.process_epochs(self.models, self.optimizers,
+                                         self.schedulers,
+                                         self.train_loader, self.val_loader,
+                                         self.test_loader)
 
         logging.info('octopus has finished running the pipeline.')
 
