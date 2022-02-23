@@ -71,7 +71,7 @@ scheduler_names=sn_scheduler_state_dict,en_scheduler_state_dict
 [hyperparameters]
 num_epochs = 4
 sn_criterion=CrossEntropyLoss
-en_criterion=CrossEntropyLoss
+en_criterion=BCELoss
 optimizer_type=Adam
 lr=0.002
 scheduler_type=ReduceLROnPlateau

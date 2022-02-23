@@ -16,6 +16,8 @@ def get_criterion(criterion_type):
     criterion = None
     if criterion_type == 'CrossEntropyLoss':
         criterion = nn.CrossEntropyLoss()
+    elif criterion_type == 'BCELoss':
+        criterion = nn.BCELoss()
     return criterion
 
 
@@ -63,9 +65,7 @@ def _combine_input_and_map(input, map):
     return combined
 
 
-def _d_loss(pred, annotated=True):
-    criterion = nn.BCELoss()
-
+def _d_loss(pred, criterion, annotated=True):
     n = len(pred)
 
     if annotated:
@@ -83,7 +83,7 @@ class Training:
     def __init__(self, wandb_config, devicehandler, train_loader):
         self.devicehandler = devicehandler
         self.sn_criterion = get_criterion(wandb_config.sn_criterion)
-        self.en_criterion = get_criterion(wandb_config.sn_criterion)
+        self.en_criterion = get_criterion(wandb_config.en_criterion)
         self.use_gan = wandb_config.use_gan
         self.train_loader = train_loader
         self.sigma = wandb_config.sigma
@@ -96,10 +96,10 @@ class Training:
     def run_epoch(self, epoch, num_epochs, models, optimizers):
         logging.info(f'Running epoch {epoch}/{num_epochs} of training...')
 
-        g_train_loss = 0
-        d_train_loss_unannotated = 0
-        d_train_loss_annotated = 0
-        d_train_loss = 0
+        total_g_train_loss = 0
+        total_d_train_loss_unannotated = 0
+        total_d_train_loss_annotated = 0
+        total_d_train_loss = 0
 
         g_model = models[0]
         d_model = models[1]
@@ -132,22 +132,19 @@ class Training:
 
             # check if gan process should be run
             if self.use_gan and epoch >= self.gan_start_epoch:
-
                 # run gan process
                 losses = self.run_gan(i, epoch, inputs, out, targets, d_model, d_optimizer, g_loss)
 
                 # unpack losses
-                total_g_loss, d_loss_unannotated, d_loss_annotated, d_loss = losses
+                g_loss, d_loss_unannotated, d_loss_annotated, d_loss = losses
 
                 # append losses to running totals
-                d_train_loss_unannotated += d_loss_unannotated.item()
-                d_train_loss_annotated += d_loss_annotated.item()
-                d_train_loss += d_loss.item()
-            else:
-                total_g_loss = g_loss
+                total_d_train_loss_unannotated += d_loss_unannotated.item()
+                total_d_train_loss_annotated += d_loss_annotated.item()
+                total_d_train_loss += d_loss.item()
 
             # compute backward pass of generator
-            total_g_loss.backward()
+            g_loss.backward()
 
             # update generator weights
             g_optimizer.step()
@@ -157,16 +154,17 @@ class Training:
             del targets
 
             # append losses to running totals
-            g_train_loss += total_g_loss.item()
+            total_g_train_loss += g_loss.item()
 
         # calculate average loss across all mini-batches
-        g_train_loss /= len(self.train_loader)
-        d_train_loss /= len(self.train_loader)
+        total_g_train_loss /= len(self.train_loader)
+        total_d_train_loss /= len(self.train_loader)
 
         # build stat dictionary
         g_lr = g_optimizer.state_dict()["param_groups"][0]["lr"]
-        stats = {'g_train_loss': g_train_loss, 'd_train_loss': d_train_loss,
-                 'd_train_loss_unannotated': d_train_loss_unannotated, 'd_train_loss_annotated': d_train_loss_annotated,
+        stats = {'g_train_loss': total_g_train_loss, 'd_train_loss': total_d_train_loss,
+                 'd_train_loss_unannotated': total_d_train_loss_unannotated,
+                 'd_train_loss_annotated': total_d_train_loss_annotated,
                  'g_lr': g_lr}
 
         return stats
@@ -187,7 +185,7 @@ class Training:
         unannotated_pred = d_model(d_input.detach(), i)  # detach to not affect generator?
 
         # calculate loss
-        d_loss_unannotated = _d_loss(unannotated_pred, annotated=False)
+        d_loss_unannotated = _d_loss(unannotated_pred, self.en_criterion, annotated=False)
 
         # 2 - compute forward pass on discriminator using annotated data
         # combine inputs and probability map
@@ -199,7 +197,7 @@ class Training:
         annotated_pred = d_model(d_input.detach(), i)  # detach to not affect generator?
 
         # calculate loss
-        d_loss_annotated = _d_loss(annotated_pred, annotated=True)
+        d_loss_annotated = _d_loss(annotated_pred, self.en_criterion, annotated=True)
 
         # 3 - update discriminator based on loss
         # calculate total discriminator loss for unannotated and annotated data
@@ -220,7 +218,7 @@ class Training:
 
         # calculate generator loss based on discriminator predictions
         # if discriminator predicts unannotated correctly, generator not doing good enough job
-        total_g_loss = g_loss + sigma * _d_loss(fake_pred, annotated=True)
+        total_g_loss = g_loss + sigma * _d_loss(fake_pred, self.en_criterion, annotated=True)
 
         return total_g_loss, d_loss_unannotated, d_loss_annotated, d_loss
 
