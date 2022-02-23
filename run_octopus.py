@@ -4,10 +4,12 @@ Wrapper script to run octopus.
 __author__ = 'ryanquinnnelson'
 
 import sys
-import logging
+import os
 
 from octopus.octopus import Octopus
 
+# execute before loading torch
+os.environ['CUDA_LAUNCH_BLOCKING'] = "1"  # better error tracking from gpu
 
 def main():
     # run octopus using config file found in the path

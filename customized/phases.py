@@ -78,14 +78,14 @@ def _d_loss(pred, criterion, annotated=True):
     return loss
 
 
-# TODO: add in d model component / gan
 class Training:
     def __init__(self, wandb_config, devicehandler, train_loader):
         self.devicehandler = devicehandler
+        self.train_loader = train_loader
+
         self.sn_criterion = get_criterion(wandb_config.sn_criterion)
         self.en_criterion = get_criterion(wandb_config.en_criterion)
         self.use_gan = wandb_config.use_gan
-        self.train_loader = train_loader
         self.sigma = wandb_config.sigma
         self.sigma_weight = wandb_config.sigma_weight
         self.gan_start_epoch = wandb_config.gan_start_epoch
@@ -159,13 +159,16 @@ class Training:
         # calculate average loss across all mini-batches
         total_g_train_loss /= len(self.train_loader)
         total_d_train_loss /= len(self.train_loader)
+        total_d_train_loss_unannotated /= len(self.train_loader)
+        total_d_train_loss_annotated /= len(self.train_loader)
 
         # build stat dictionary
         g_lr = g_optimizer.state_dict()["param_groups"][0]["lr"]
+        d_lr = d_optimizer.state_dict()["param_groups"][0]["lr"]
         stats = {'g_train_loss': total_g_train_loss, 'd_train_loss': total_d_train_loss,
                  'd_train_loss_unannotated': total_d_train_loss_unannotated,
                  'd_train_loss_annotated': total_d_train_loss_annotated,
-                 'g_lr': g_lr}
+                 'g_lr': g_lr, 'd_lr': d_lr}
 
         return stats
 
@@ -226,35 +229,35 @@ class Training:
 class Validation:
     def __init__(self, wandb_config, devicehandler, val_loader):
         self.devicehandler = devicehandler
-        self.criterion = get_criterion(wandb_config['sn_criterion'])
-        self.resize_height = wandb_config.resize_height
-        self.resize_width = wandb_config.resize_width
         self.val_loader = val_loader
+        self.criterion = get_criterion(wandb_config.sn_criterion)
 
         logging.info(f'Generator criterion for validation phase:\n{self.criterion}')
 
     def run_epoch(self, epoch, num_epochs, models):
         logging.info(f'Running epoch {epoch}/{num_epochs} of evaluation...')
 
-        val_loss = 0
-        actual_hits = 0
-        score = 0
+        total_val_loss = 0
+        total_hits = 0
+        total_iou_score = 0
+        out_shape = None  # save for calculating total number of pixels per image
 
-        sn_model = models[0]
+        g_model = models[0]
         with torch.no_grad():  # deactivate autograd engine to improve efficiency
 
-            # Set SN model in validation mode
-            sn_model.eval()
+            # Set model in validation mode
+            g_model.eval()
 
             # process mini-batches
             for i, (inputs, targets) in enumerate(self.val_loader):
                 logging.info(f'validation batch:{i}')
 
                 # prep
-                inputs, targets = self.devicehandler.move_data_to_device(sn_model, inputs, targets)
+                inputs, targets = self.devicehandler.move_data_to_device(g_model, inputs, targets)
 
                 # compute forward pass
-                out = sn_model.forward(inputs, i)
+                out = g_model.forward(inputs, i)
+                out_shape = out.shape
 
                 if i == 0:
                     logging.info(f'inputs.shape:{inputs.shape}')
@@ -263,24 +266,25 @@ class Validation:
 
                 # calculate loss
                 loss = self.criterion(out, targets)
-                val_loss += loss.item()
+                total_val_loss += loss.item()
 
                 # calculate accuracy
-                actual_hits += calculate_num_hits(i, targets, out)
-                score += calculate_iou_score(i, targets, out)
+                total_hits += calculate_num_hits(i, targets, out)
+                total_iou_score += calculate_iou_score(i, targets, out)
 
                 # delete mini-batch from device
                 del inputs
                 del targets
 
-            # calculate evaluation metrics per mini-batch
-            possible_hits = len(self.val_loader.dataset) * self.resize_width * self.resize_height
-            val_loss /= len(self.val_loader)
-            val_acc = actual_hits / possible_hits
-            iou_score = score / len(self.val_loader.dataset)
+            # calculate average evaluation metrics per mini-batch
+            pixels_per_image = out_shape[2] * out_shape[3]
+            possible_hits = len(self.val_loader.dataset) * pixels_per_image
+            val_acc = total_hits / possible_hits
+            total_val_loss /= len(self.val_loader)
+            total_iou_score /= len(self.val_loader.dataset)
 
             # build stats dictionary
-            stats = {'val_loss': val_loss, 'val_acc': val_acc, 'val_iou_score': iou_score}
+            stats = {'val_loss': total_val_loss, 'val_acc': val_acc, 'val_iou_score': total_iou_score}
 
             return stats
 
@@ -295,19 +299,19 @@ class Testing:
     def run_epoch(self, epoch, num_epochs, models):
         logging.info(f'Running epoch {epoch}/{num_epochs} of evaluation...')
 
-        sn_model = models[0]
+        g_model = models[0]
         with torch.no_grad():  # deactivate autograd engine to improve efficiency
 
             # Set model in validation mode
-            sn_model.eval()
+            g_model.eval()
 
             # process mini-batches
             for i, (inputs, targets) in enumerate(self.test_loader):
                 # prep
-                inputs, targets = self.devicehandler.move_data_to_device(sn_model, inputs, targets)
+                inputs, targets = self.devicehandler.move_data_to_device(g_model, inputs, targets)
 
                 # compute forward pass
-                out = sn_model.forward(inputs)
+                out = g_model.forward(inputs)
 
                 # format and save output
 

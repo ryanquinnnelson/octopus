@@ -1,11 +1,9 @@
 import logging
-from collections import OrderedDict
 
-import torch
 import torch.nn as nn
 
 
-# TODO: revise models to modular
+# TODO: revise models to modular, accept argument for which model type to use
 def get_models(wandb_config):
     sn = SegmentationNetwork()
     en = EvaluationNetwork()

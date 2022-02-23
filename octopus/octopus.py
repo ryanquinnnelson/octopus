@@ -4,7 +4,6 @@ Performs environment setup for deep learning and runs a deep learning pipeline.
 __author__ = 'ryanquinnnelson'
 
 import logging
-import os
 import configparser
 
 import octopus.utilities.configutilities as cu
@@ -22,9 +21,6 @@ from octopus.handlers.phasehandler import PhaseHandler
 import customized.datasets as datasets
 import customized.models as models
 import customized.phases as phases
-
-# execute before loading torch
-os.environ['CUDA_LAUNCH_BLOCKING'] = "1"  # better error tracking from gpu
 
 
 class Octopus:
@@ -51,8 +47,8 @@ class Octopus:
 
         # models and components
         self.models_list = []
-        self.optimizers = []
-        self.schedulers = []
+        self.optimizers_list = []
+        self.schedulers_list = []
         self.train_loader = None
         self.val_loader = None
         self.test_loader = None
@@ -205,10 +201,10 @@ class Octopus:
         for model in self.models_list:
             # optimizer
             opt = self.optimizerhandler.get_optimizer(model, config)
-            self.optimizers.append(opt)
+            self.optimizers_list.append(opt)
 
             sched = self.schedulerhandler.get_scheduler(opt, config)
-            self.schedulers.append(sched)
+            self.schedulers_list.append(sched)
 
         logging.info(f'octopus finished generating the model components.')
 
@@ -249,7 +245,7 @@ class Octopus:
         """
         logging.info('octopus is running the pipeline...')
 
-        self.phasehandler.process_epochs(self.models_list, self.optimizers,self.schedulers)
+        self.phasehandler.process_epochs(self.models_list, self.optimizers_list, self.schedulers_list)
 
         logging.info('octopus has finished running the pipeline.')
 
