@@ -22,9 +22,8 @@ def main():
     octopus.setup_environment()
     octopus.load_data()
     octopus.setup_phasehandler()
-
-    # octopus.initialize_models()
-    # octopus.initialize_model_components()
+    octopus.initialize_models()
+    octopus.initialize_model_components()
     # octopus.run_pipeline()
     # octopus.cleanup()
 

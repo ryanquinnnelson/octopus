@@ -147,13 +147,13 @@ class Octopus:
         logging.info('octopus has finished setting up the environment.')
 
     def initialize_models(self):
-        logging.info(f'octopus is generating the model...')
+        logging.info(f'octopus is generating the models...')
 
         # use wandb configs so we can sweep hyperparameters
         config = self.wandbconnector.wandb_config
         self.models = models.get_models(config)
 
-        logging.info(f'octopus finished generating the model.')
+        logging.info(f'octopus finished generating the models.')
 
     # TODO: allow for possibility of different types of optimizers/schedulers for each model
     def initialize_model_components(self):

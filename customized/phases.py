@@ -16,8 +16,6 @@ def get_criterion(criterion_type):
     criterion = None
     if criterion_type == 'CrossEntropyLoss':
         criterion = nn.CrossEntropyLoss()
-
-    logging.info(f'Criterion is set:\n{criterion}')
     return criterion
 
 
@@ -64,9 +62,12 @@ def calculate_iou_score(i, targets, out):
 class Training:
     def __init__(self, wandb_config, devicehandler):
         self.devicehandler = devicehandler
-        self.g_criterion = wandb_config.g_criterion
+        self.sn_criterion = wandb_config.sn_criterion
         self.en_criterion = wandb_config.en_criterion
         self.use_gan = wandb_config.use_gan
+
+        logging.info(f'Generator criterion for training phase:\n{self.sn_criterion}')
+        logging.info(f'Discriminator criterion for training phase:\n{self.en_criterion}')
 
     def run_epoch(self, epoch, num_epochs, models, optimizers, train_loader):
         logging.info(f'Running epoch {epoch}/{num_epochs} of training...')
@@ -103,7 +104,7 @@ class Training:
                 logging.info(f'out.shape:{out.shape}')
 
             # calculate loss
-            g_loss = self.g_criterion(out, targets)
+            g_loss = self.sn_criterion(out, targets)
             g_train_loss += g_loss.item()
 
             total_g_loss = g_loss
@@ -135,6 +136,8 @@ class Validation:
         self.criterion = get_criterion(wandb_config['sn_criterion'])
         self.resize_height = wandb_config.resize_height
         self.resize_width = wandb_config.resize_width
+
+        logging.info(f'Generator criterion for validation phase:\n{self.criterion}')
 
     def run_epoch(self, epoch, num_epochs, models, val_loader):
         logging.info(f'Running epoch {epoch}/{num_epochs} of evaluation...')

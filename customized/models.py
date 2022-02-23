@@ -10,8 +10,8 @@ def get_models(wandb_config):
     sn = SegmentationNetwork()
     en = SegmentationNetwork()
 
-    logging.info(f'Model1 initialized:\n{sn}')
-    logging.info(f'Model2 initialized:\n{en}')
+    logging.info(f'Generator model initialized:\n{sn}')
+    logging.info(f'Discriminator model initialized:\n{en}')
 
     return [sn, en]
 
