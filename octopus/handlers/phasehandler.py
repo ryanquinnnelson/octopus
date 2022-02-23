@@ -65,6 +65,7 @@ class PhaseHandler:
                 epoch_stats_dict[key] = self.stats[key][i]
             self.wandbconnector.log_stats(epoch_stats_dict)
 
+    # TODO: turn on test phase
     def process_epochs(self, models, model_names, optimizers, optimizer_names, schedulers,
                        scheduler_names,
                        train_loader, val_loader, test_loader):
@@ -88,7 +89,8 @@ class PhaseHandler:
             val_stats = self.validation.run_epoch(epoch, self.num_epochs, models, val_loader)
 
             # testing
-            test_stats = self.testing.run_epoch(epoch, self.num_epochs, models, test_loader)
+            # test_stats = self.testing.run_epoch(epoch, self.num_epochs, models, test_loader)
+            test_stats = {}
 
             # record end time
             end = time.time()

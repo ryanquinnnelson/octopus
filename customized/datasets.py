@@ -26,12 +26,13 @@ def get_datasets(config):
     test_dir = config['data']['test_dir']
     test_target_dir = config['data']['test_target_dir']
     train_transforms = cu.to_string_list(config['data']['transforms_list'])
+    resize_height = config['hyperparameters'].getint('resize_height')
 
     idh = ImageDatasetHandler(data_dir,
                               train_dir, train_target_dir,
                               val_dir, val_target_dir,
                               test_dir, test_target_dir,
-                              train_transforms)
+                              train_transforms,resize_height)
 
     train_dataset = idh.get_train_dataset()
     val_dataset = idh.get_val_dataset()
@@ -105,7 +106,7 @@ class ImageDataset(Dataset):
         return tensor_img, tensor_target_first_channel
 
 
-def _compose_transforms(transforms_list):
+def _compose_transforms(transforms_list, resize_height):
     """
     Build a composition of transformations to perform on image data.
     Args:
@@ -122,7 +123,7 @@ def _compose_transforms(transforms_list):
             t_list.append(transforms.ToTensor())
         elif each == 'Resize':
             # t_list.append(transforms.Resize((775, 522), interpolation='bilinear'))
-            t_list.append(transforms.Resize(224, interpolation=Image.BILINEAR))
+            t_list.append(transforms.Resize(resize_height, interpolation=Image.BILINEAR))
 
     composition = transforms.Compose(t_list)
 
@@ -134,7 +135,7 @@ class ImageDatasetHandler:
                  train_dir, train_target_dir,
                  val_dir, val_target_dir,
                  test_dir, test_target_dir,
-                 train_transforms):
+                 train_transforms, resize_height):
         """
         Initialize NumericalDatasetHandler.
         :param data_dir (str): fully qualified path to root directory inside which data subdirectories are placed
@@ -153,6 +154,7 @@ class ImageDatasetHandler:
         self.test_dir = test_dir
         self.test_target_dir = test_target_dir
         self.train_transforms = train_transforms
+        self.resize_height = resize_height
 
         # determine whether normalize transform should also be applied to validation and test data
         self.should_normalize_val = True if 'Normalize' in train_transforms else False
@@ -166,7 +168,7 @@ class ImageDatasetHandler:
         :return: Dataset
         """
         # initialize dataset
-        t = _compose_transforms(self.train_transforms)
+        t = _compose_transforms(self.train_transforms, self.resize_height)
         dataset = ImageDataset(self.train_dir, self.train_target_dir, t)
         logging.info(f'Loaded {len(dataset)} training images.')
         return dataset
@@ -179,9 +181,9 @@ class ImageDatasetHandler:
 
         if self.should_normalize_val:
             logging.info('Normalizing validation data to match normalization of training data...')
-            t = _compose_transforms(['Resize', 'ToTensor', 'Normalize'])
+            t = _compose_transforms(['Resize', 'ToTensor', 'Normalize'], self.resize_height)
         else:
-            t = _compose_transforms(['Resize', 'ToTensor'])
+            t = _compose_transforms(['Resize', 'ToTensor'], self.resize_height)
 
         # initialize dataset
         dataset = ImageDataset(self.val_dir, self.val_target_dir, t)
@@ -196,9 +198,9 @@ class ImageDatasetHandler:
 
         if self.should_normalize_test:
             logging.info('Normalizing validation data to match normalization of training data...')
-            t = _compose_transforms(['Resize', 'ToTensor', 'Normalize'])
+            t = _compose_transforms(['Resize', 'ToTensor', 'Normalize'], self.resize_height)
         else:
-            t = _compose_transforms(['Resize', 'ToTensor'])
+            t = _compose_transforms(['Resize', 'ToTensor'], self.resize_height)
 
         # initialize dataset
         dataset = ImageDataset(self.test_dir, self.test_target_dir, t)

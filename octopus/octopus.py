@@ -216,7 +216,7 @@ class Octopus:
 
         # use wandb configs so we can sweep hyperparameters
         wandb_config = self.wandbconnector.wandb_config
-        training, validation, testing = phases.get_phases(wandb_config)
+        training, validation, testing = phases.get_phases(wandb_config, self.devicehandler, self.outputhandler)
 
         self.phasehandler = PhaseHandler(num_epochs, self.devicehandler, self.checkpointhandler, self.schedulerhandler,
                                          self.wandbconnector, training, validation, testing, model_names,
