@@ -22,20 +22,14 @@ def get_criterion(criterion_type):
 
 
 def calculate_num_hits(i, targets, out):
-    # convert to class labels
+
     # convert out to class labels
     labels_out = out.argmax(axis=1)
     if i == 0:
         logging.info(f'labels_out.shape:{labels_out.shape}')
 
-    # compare predictions against actual
+    # count the total number of matches between predictions and actual
     compare = targets == labels_out
-
-    # # convert 2D images into 1D vectors
-    # out = labels_out.cpu().detach().numpy().reshape((batch_size, -1))
-    # labels_inputs = inputs.cpu().detach().numpy().reshape((batch_size, -1))
-
-    # compare lists of max indices and find the number that match
     n_hits = np.sum(compare.cpu().detach().numpy())
 
     if i == 0:
