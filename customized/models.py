@@ -8,7 +8,7 @@ import torch.nn as nn
 # TODO: revise models to modular
 def get_models(wandb_config):
     sn = SegmentationNetwork()
-    en = SegmentationNetwork()
+    en = EvaluationNetwork()
 
     logging.info(f'Generator model initialized:\n{sn}')
     logging.info(f'Discriminator model initialized:\n{en}')
@@ -127,3 +127,49 @@ class SegmentationNetwork(nn.Module):
             logging.info(f'block7out.shape:{block7out.shape}')
 
         return block7out
+
+
+class EvaluationNetwork(nn.Module):
+    def __init__(self):
+        super().__init__()
+
+        self.block1 = nn.Sequential(
+
+            # conv1
+            CnnBlock(4, 4)
+
+        )
+
+        self.block2 = nn.Sequential(
+
+            nn.Flatten(),  # need to convert 2d to 1d
+
+        )
+
+        self.block3 = nn.Sequential(
+            LinearBlock(297472, 256),  # 4*224*332
+            LinearBlock(256, 128),
+            LinearBlock(128, 64),
+            nn.Linear(64, 1),  # binary classes
+            nn.Sigmoid()
+        )
+
+    def forward(self, x, i):
+        if i == 0:
+            logging.info(f'x:{x.shape}')
+
+        block1out = self.block1(x)
+
+        if i == 0:
+            logging.info(f'block1out:{block1out.shape}')
+        block2out = self.block2(block1out)
+
+        if i == 0:
+            logging.info(f'block2out:{block2out.shape}')
+
+        block3out = self.block3(block2out)
+
+        if i == 0:
+            logging.info(f'block3out:{block3out.shape}')
+
+        return block3out
