@@ -222,13 +222,15 @@ class Octopus:
 
         num_epochs = self.config['hyperparameters'].getint('num_epochs')
         load_from_checkpoint = self.config['checkpoint'].getboolean('load_from_checkpoint')
-        model_names = self.config['checkpoint']['model_names']
-        optimizer_names = self.config['checkpoint']['optimizer_names']
-        scheduler_names = self.config['checkpoint']['scheduler_names']
+        model_names = cu.to_string_list(self.config['checkpoint']['model_names'])
+        optimizer_names = cu.to_string_list(self.config['checkpoint']['optimizer_names'])
+        scheduler_names = cu.to_string_list(self.config['checkpoint']['scheduler_names'])
 
         # use wandb configs so we can sweep hyperparameters
         wandb_config = self.wandbconnector.wandb_config
-        training, validation, testing = phases.get_phases(wandb_config, self.devicehandler, self.outputhandler)
+        training, validation, testing = phases.get_phases(wandb_config, self.devicehandler, self.outputhandler,
+                                                          self.train_loader, self.val_loader,
+                                                          self.test_loader)
 
         self.phasehandler = PhaseHandler(num_epochs, self.devicehandler, self.checkpointhandler, self.schedulerhandler,
                                          self.wandbconnector, training, validation, testing, model_names,
@@ -247,10 +249,7 @@ class Octopus:
         """
         logging.info('octopus is running the pipeline...')
 
-        self.phasehandler.process_epochs(self.models_list, self.optimizers,
-                                         self.schedulers,
-                                         self.train_loader, self.val_loader,
-                                         self.test_loader)
+        self.phasehandler.process_epochs(self.models_list, self.optimizers,self.schedulers)
 
         logging.info('octopus has finished running the pipeline.')
 

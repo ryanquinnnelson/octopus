@@ -114,89 +114,16 @@ class SegmentationNetwork(nn.Module):
     def __init__(self):
         super().__init__()
 
-        self.block1 = nn.Sequential(
-            # conv1
-            CnnBlock(3, 64),
-            CnnBlock(64, 64),
-
-            # pool1
-            nn.MaxPool2d(kernel_size=2, stride=2, padding=1),
-
-            # conv2
-            CnnBlock(64, 128),
-
-            # pool2
-            nn.MaxPool2d(kernel_size=2, stride=2, padding=1),
-
-            # conv3
-            CnnBlock(128, 128),
-            CnnBlock(128, 256),
-
-            # pool3
-            nn.MaxPool2d(kernel_size=2, stride=2, padding=1),
-
-            # conv4
-            CnnBlock(256, 512),
-            CnnBlock(512, 512)  # shortcut to up-conv1
-
-        )
-
-        self.block2 = nn.Sequential(
-
-            # pool4
-            nn.MaxPool2d(kernel_size=2, stride=2, padding=1),
-
-            # conv5
-            CnnBlock(512, 512),
-            CnnBlock(512, 512)  # shortcut to up-conv2
-
-        )
-
-        self.block3 = nn.Sequential(
-
-            # pool5
-            nn.MaxPool2d(kernel_size=2, stride=2, padding=1),
-
-            # conv6
-            CnnBlock(512, 1024),
-            CnnBlock(1024, 1024)  # shortcut to up-conv3
-        )
-
-        self.block4 = UpConvBlock(1024, 1024, (224, 332))
-
-        self.block5 = UpConvBlock(512, 512, (224, 332))
-
-        self.block6 = UpConvBlock(512, 512, (224, 332))
-
         self.block7 = nn.Sequential(
-            CnnBlock(2048, 1024),
-            nn.Conv2d(1024, 2, kernel_size=1, stride=1, padding=0, bias=False),  # 2 classes
+            CnnBlock(3, 3),
+            nn.Conv2d(3, 2, kernel_size=1, stride=1, padding=0, bias=False),  # 2 classes
             nn.Softmax2d()
         )
 
     def forward(self, x, i):
-        block1out = self.block1(x)
-        block2out = self.block2(block1out)
-        block3out = self.block3(block2out)
-
-        # upconvolution
-        block4out = self.block4(block3out)
-        block5out = self.block5(block2out)
-        block6out = self.block6(block1out)
-
-        # concatenate results
-        concatenated = torch.cat((block4out, block5out, block6out), dim=1)  # channels are the second dimension
-
-        block7out = self.block7(concatenated)
+        block7out = self.block7(x)
 
         if i == 0:
-            logging.info(f'block1out.shape:{block1out.shape}')
-            logging.info(f'block2out.shape:{block2out.shape}')
-            logging.info(f'block3out.shape:{block3out.shape}')
-            logging.info(f'block4out.shape:{block4out.shape}')
-            logging.info(f'block5out.shape:{block5out.shape}')
-            logging.info(f'block6out.shape:{block6out.shape}')
-            logging.info(f'concatenated.shape:{concatenated.shape}')
             logging.info(f'block7out.shape:{block7out.shape}')
 
         return block7out

@@ -66,16 +66,16 @@ class CheckpointHandler:
         # save state for each model, optimizer, scheduler combination
         for i, model in enumerate(models_list):
             model_name = model_names[i]
-            logging.info(f'model_name:{model_name}')
+            # logging.info(f'model_name:{model_name}')
             checkpoint[model_name] = model.state_dict()
 
             optimizer_name = optimizer_names[i]
-            logging.info(f'optimizer_name:{optimizer_name}')
+            # logging.info(f'optimizer_name:{optimizer_name}')
             optimizer = optimizers[i]
             checkpoint[optimizer_name] = optimizer.state_dict()
 
             scheduler_name = scheduler_names[i]
-            logging.info(f'scheduler_name:{scheduler_name}')
+            # logging.info(f'scheduler_name:{scheduler_name}')
             scheduler = schedulers[i]
             checkpoint[scheduler_name] = scheduler.state_dict()
 
@@ -90,16 +90,16 @@ class CheckpointHandler:
         # reload saved state for each model, optimizer, scheduler combination
         for i, model in enumerate(models_list):
             model_name = model_names[i]
-            logging.info(f'model_name:{model_name}')
+            # logging.info(f'model_name:{model_name}')
             model.load_state_dict(checkpoint[model_name])
 
             optimizer_name = optimizer_names[i]
-            logging.info(f'optimizer_name:{optimizer_name}')
+            # logging.info(f'optimizer_name:{optimizer_name}')
             optimizer = optimizers[i]
             optimizer.load_state_dict(checkpoint[optimizer_name])
 
             scheduler_name = scheduler_names[i]
-            logging.info(f'scheduler_name:{scheduler_name}')
+            # logging.info(f'scheduler_name:{scheduler_name}')
             scheduler = schedulers[i]
             scheduler.load_state_dict(checkpoint[scheduler_name])
 

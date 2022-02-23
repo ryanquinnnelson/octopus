@@ -66,8 +66,7 @@ class PhaseHandler:
             self.wandbconnector.log_stats(epoch_stats_dict)
 
     # TODO: turn on test phase
-    def process_epochs(self, models_list, optimizers, schedulers,
-                       train_loader, val_loader, test_loader):
+    def process_epochs(self, models_list, optimizers, schedulers):
 
         # load checkpoint if necessary
         if self.load_from_checkpoint:
@@ -78,18 +77,18 @@ class PhaseHandler:
 
         # run epochs
         for epoch in range(self.first_epoch, self.num_epochs + 1):
-            logging.info(f'stats:{self.stats}')
+
             # record start time
             start = time.time()
 
             # train
-            train_stats = self.training.run_epoch(epoch, self.num_epochs, models_list, optimizers, train_loader)
+            train_stats = self.training.run_epoch(epoch, self.num_epochs, models_list, optimizers)
 
             # validate
-            val_stats = self.validation.run_epoch(epoch, self.num_epochs, models_list, val_loader)
+            val_stats = self.validation.run_epoch(epoch, self.num_epochs, models_list)
 
             # testing
-            # test_stats = self.testing.run_epoch(epoch, self.num_epochs, models_list, test_loader)
+            # test_stats = self.testing.run_epoch(epoch, self.num_epochs, models_list)
             test_stats = {}
 
             # record end time
@@ -104,6 +103,7 @@ class PhaseHandler:
 
             # report stats
             self.wandbconnector.log_stats(curr_stats)
+            logging.info(f'stats:{curr_stats}')
 
             # append current stats to all stats for checkpointing
             self.append_stats(curr_stats)
@@ -113,10 +113,10 @@ class PhaseHandler:
                 self.schedulerhandler.update_scheduler(schedulers[i], curr_stats)
 
             # save model checkpoint
-            # if epoch % 5 == 0:
-            self.checkpointhandler.save(models_list, self.model_names, optimizers, self.optimizer_names, schedulers,
-                                        self.scheduler_names,
-                                        epoch + 1, self.stats)
+            if epoch % 5 == 0:
+                self.checkpointhandler.save(models_list, self.model_names, optimizers, self.optimizer_names, schedulers,
+                                            self.scheduler_names,
+                                            epoch + 1, self.stats)
 
             # # check if early stopping criteria is met
             # if self.statshandler.stopping_criteria_is_met(epoch, self.wandbconnector):

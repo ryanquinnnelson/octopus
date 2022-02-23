@@ -5,10 +5,10 @@ import torch
 import torch.nn as nn
 
 
-def get_phases(wandb_config, devicehandler, outputhandler):
-    training_phase = Training(wandb_config, devicehandler)
-    validation_phase = Validation(wandb_config, devicehandler)
-    testing_phase = Testing(wandb_config, devicehandler, outputhandler)
+def get_phases(wandb_config, devicehandler, outputhandler, train_loader, val_loader, test_loader):
+    training_phase = Training(wandb_config, devicehandler, train_loader)
+    validation_phase = Validation(wandb_config, devicehandler, val_loader)
+    testing_phase = Testing(wandb_config, devicehandler, outputhandler, test_loader)
     return training_phase, validation_phase, testing_phase
 
 
@@ -60,16 +60,17 @@ def calculate_iou_score(i, targets, out):
 
 # TODO: add in d model component / gan
 class Training:
-    def __init__(self, wandb_config, devicehandler):
+    def __init__(self, wandb_config, devicehandler, train_loader):
         self.devicehandler = devicehandler
         self.sn_criterion = get_criterion(wandb_config.sn_criterion)
         self.en_criterion = get_criterion(wandb_config.sn_criterion)
         self.use_gan = wandb_config.use_gan
+        self.train_loader = train_loader
 
         logging.info(f'Generator criterion for training phase:\n{self.sn_criterion}')
         logging.info(f'Discriminator criterion for training phase:\n{self.en_criterion}')
 
-    def run_epoch(self, epoch, num_epochs, models, optimizers, train_loader):
+    def run_epoch(self, epoch, num_epochs, models, optimizers):
         logging.info(f'Running epoch {epoch}/{num_epochs} of training...')
 
         g_train_loss = 0
@@ -87,7 +88,7 @@ class Training:
         # d_model.train()
 
         # process mini-batches
-        for i, (inputs, targets) in enumerate(train_loader):
+        for i, (inputs, targets) in enumerate(self.train_loader):
             logging.info(f'training batch:{i}')
             # prep
             g_optimizer.zero_grad()
@@ -120,8 +121,8 @@ class Training:
             del targets
 
         # calculate average loss across all mini-batches
-        g_train_loss /= len(train_loader)
-        d_train_loss /= len(train_loader)
+        g_train_loss /= len(self.train_loader)
+        d_train_loss /= len(self.train_loader)
 
         # build stat dictionary
         g_lr = g_optimizer.state_dict()["param_groups"][0]["lr"]
@@ -133,15 +134,16 @@ class Training:
 
 
 class Validation:
-    def __init__(self, wandb_config, devicehandler):
+    def __init__(self, wandb_config, devicehandler, val_loader):
         self.devicehandler = devicehandler
         self.criterion = get_criterion(wandb_config['sn_criterion'])
         self.resize_height = wandb_config.resize_height
         self.resize_width = wandb_config.resize_width
+        self.val_loader = val_loader
 
         logging.info(f'Generator criterion for validation phase:\n{self.criterion}')
 
-    def run_epoch(self, epoch, num_epochs, models, val_loader):
+    def run_epoch(self, epoch, num_epochs, models):
         logging.info(f'Running epoch {epoch}/{num_epochs} of evaluation...')
 
         val_loss = 0
@@ -155,7 +157,7 @@ class Validation:
             sn_model.eval()
 
             # process mini-batches
-            for i, (inputs, targets) in enumerate(val_loader):
+            for i, (inputs, targets) in enumerate(self.val_loader):
                 logging.info(f'validation batch:{i}')
 
                 # prep
@@ -182,10 +184,10 @@ class Validation:
                 del targets
 
             # calculate evaluation metrics per mini-batch
-            possible_hits = len(val_loader.dataset) * self.resize_width * self.resize_height
-            val_loss /= len(val_loader)
+            possible_hits = len(self.val_loader.dataset) * self.resize_width * self.resize_height
+            val_loss /= len(self.val_loader)
             val_acc = actual_hits / possible_hits
-            iou_score = score / len(val_loader.dataset)
+            iou_score = score / len(self.val_loader.dataset)
 
             # build stats dictionary
             stats = {'val_loss': val_loss, 'val_acc': val_acc, 'val_iou_score': iou_score}
@@ -195,11 +197,12 @@ class Validation:
 
 # TODO: format and save output
 class Testing:
-    def __init__(self, wandb_config, devicehandler, outputhandler):
+    def __init__(self, wandb_config, devicehandler, outputhandler, test_loader):
         self.devicehandler = devicehandler
         self.outputhandler = outputhandler
+        self.test_loader =test_loader
 
-    def run_epoch(self, epoch, num_epochs, models, test_loader):
+    def run_epoch(self, epoch, num_epochs, models):
         logging.info(f'Running epoch {epoch}/{num_epochs} of evaluation...')
 
         sn_model = models[0]
@@ -209,7 +212,7 @@ class Testing:
             sn_model.eval()
 
             # process mini-batches
-            for i, (inputs, targets) in enumerate(test_loader):
+            for i, (inputs, targets) in enumerate(self.test_loader):
                 # prep
                 inputs, targets = self.devicehandler.move_data_to_device(sn_model, inputs, targets)
 
