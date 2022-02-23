@@ -50,17 +50,17 @@ class SchedulerHandler:
         logging.info(f'Scheduler initialized:\n{scheduler}\n{scheduler.state_dict()}')
         return scheduler
 
-    def update_scheduler(self, scheduler, stats):
+    def update_scheduler(self, scheduler, curr_stats):
         """
         Perform a single scheduler step.
         Args:
             scheduler (nn.optim): scheduler to step
-            stats (Dictionary): dictionary of run stats from which the latest scheduler_plateau_metric value should be
+            curr_stats (Dictionary): dictionary of latest run stats from which the latest scheduler_plateau_metric value should be
             extracted
         Returns: None
         """
         if self.scheduler_type == 'ReduceLROnPlateau':
-            metric_val = stats[self.scheduler_plateau_metric][-1]  # last recorded value
+            metric_val = curr_stats[self.scheduler_plateau_metric]
             scheduler.step(metric_val)
         else:
             scheduler.step()

@@ -18,6 +18,7 @@ from octopus.handlers.devicehandler import DeviceHandler
 from octopus.handlers.optimizerhandler import OptimizerHandler
 from octopus.handlers.schedulerhandler import SchedulerHandler
 from octopus.handlers.dataloaderhandler import DataLoaderHandler
+from octopus.handlers.phasehandler import PhaseHandler
 
 import customized.datasets as datasets
 
@@ -45,6 +46,7 @@ class Octopus:
         self.schedulerhandler = None
         self.dataloaderhandler = None
         self.datasethandler = None
+        self.phasehandler = None
 
         # models and components
         self.models = []
@@ -197,8 +199,13 @@ class Octopus:
 
     def load_pipeline(self):
 
-        # stats
+        if self.config.has_option('checkpoint', 'checkpoint_file'):
+            checkpoint_file = self.config['checkpoint']['checkpoint_file']
+        else:
+            checkpoint_file = None
 
-        # phases
+        num_epochs = self.config['hyperparameters'].getint('num_epochs')
+        load_from_checkpoint = self.config['checkpoint'].getboolean('load_from_checkpoint')
 
-        pass
+        self.phasehandler = PhaseHandler(num_epochs, self.devicehandler, self.checkpointhandler, self.schedulerhandler,
+                                         self.wandbconnector, load_from_checkpoint, checkpoint_file)
