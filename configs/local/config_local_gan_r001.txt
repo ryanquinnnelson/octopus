@@ -52,11 +52,7 @@ pin_memory=True
 batch_size=2
 
 
-[model]
-model_names=sn_state_dict,en_state_dict
-optimizer_names=sn_optimizer_state_dict,en_optimizer_state_dict
-scheduler_names=sn_scheduler_state_dict,en_scheduler_state_dict
-
+[model]	
 model_type=FlexGAN
 # remove maxpool2,cnn3 and standardize channel pattern
 layers_list_sn=
@@ -95,15 +91,20 @@ checkpoint_dir = /Users/ryanqnelson/Desktop/test/checkpoints
 delete_existing_checkpoints = True
 load_from_checkpoint=False
 checkpoint_file =  None
+model_names=sn_state_dict,en_state_dict
+optimizer_names=sn_optimizer_state_dict,en_optimizer_state_dict
+scheduler_names=sn_scheduler_state_dict,en_scheduler_state_dict
 
 
 
 [hyperparameters]
 num_epochs = 2
 criterion_type=CrossEntropyLoss
-criterion_kwargs=use_burn_in=False
 optimizer_type=Adam
-optimizer_kwargs=lr=0.002,weight_decay=0.000005
+lr=0.002
 scheduler_type=ReduceLROnPlateau
-scheduler_kwargs=factor=0.5,patience=5,mode=min,verbose=True
+scheduler_factor=0.5
+scheduler_patience=5
+scheduler_mode=min
+scheduler_verbose=True
 scheduler_plateau_metric=val_loss

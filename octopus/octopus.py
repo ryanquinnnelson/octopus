@@ -5,7 +5,6 @@ __author__ = 'ryanquinnnelson'
 
 import logging
 import os
-import sys
 import configparser
 
 import octopus.utilities.configutilities as cu
@@ -77,7 +76,6 @@ class Octopus:
         # log configuration file details now that logging is set up
         logging.info(f'Parsed configuration from {self.config_file}.')
 
-    # TODO: revise hyper_dict to have correct data types
     def setup_wandb(self):
         logging.info(f'octopus is setting up wandb...')
         # package handler
@@ -97,10 +95,12 @@ class Octopus:
         mode = self.config['wandb']['mode']
 
         # get all hyperparameters from different parts of config so wandb can track things that we might want to change
+        # and so wandb can perform a hyperparameter sweep
         hyper_dict = dict(self.config['hyperparameters'])
         hyper_dict.update(dict(self.config['model']))
         hyper_dict.update(dict(self.config['dataloader']))
         config = hyper_dict
+        config = cu.convert_configs_to_correct_type(config)
 
         # initialize connector
         self.wandbconnector = WandbConnector(wandb_dir, entity, run_name, project, notes, tags, mode, config)
@@ -228,11 +228,11 @@ class Octopus:
 
         wandb_config = self.wandbconnector.wandb_config
         models = self.models
-        model_names = self.config['model']['model_names']
+        model_names = self.config['checkpoint']['model_names']
         optimizers = self.optimizers
-        optimizer_names = self.config['model']['optimizer_names']
+        optimizer_names = self.config['checkpoint']['optimizer_names']
         schedulers = self.schedulers
-        scheduler_names = self.config['model']['scheduler_names']
+        scheduler_names = self.config['checkpoint']['scheduler_names']
 
         self.phasehandler.process_epochs(wandb_config, models, model_names, optimizers, optimizer_names, schedulers,
                                          scheduler_names,
