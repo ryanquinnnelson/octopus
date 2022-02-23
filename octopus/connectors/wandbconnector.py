@@ -8,6 +8,7 @@ import subprocess
 
 import pandas as pd
 
+import octopus.utilities.fileutilities as fu
 
 
 class WandbConnector:
@@ -15,7 +16,7 @@ class WandbConnector:
     Defines an object which manages the connection to wandb.
     """
 
-    def __init__(self, wandb_dir, entity, run_name, project, notes, tags, config):
+    def __init__(self, wandb_dir, entity, run_name, project, notes, tags, mode, config):
         """
         Initialize wandb connector.
         Args:
@@ -35,31 +36,21 @@ class WandbConnector:
         self.project = project
         self.notes = notes
         self.tags = tags
+        self.mode = mode  # set mode to offline if online mode is failing
         self.config = config
         self.wandb_config = None
         self.run = None
 
-    def setup(self):
+    def initialize_wandb(self):
         """
-        Perform all steps needed to set up wandb. Create wandb directory and log in to wandb.
-        Returns: None
-        """
-
-        logging.info('Setting up wandb connection...')
-
-        # ensure wandb_dir exists
-        utilities.create_directory(self.wandb_dir)
-
-        _login()
-        self.wandb_config = self._initialize()
-
-    def _initialize(self):
-        """
-         Initialize wandb connection. Define reinitialization to True.
+        Initialize wandb connection. Define reinitialization to True.
         Returns:wandb.config object
         """
 
         logging.info('Initializing wandb...')
+
+        # ensure wandb_dir exists
+        fu.create_directory(self.wandb_dir)
 
         import wandb
         self.run = wandb.init(dir=self.wandb_dir,
@@ -68,9 +59,11 @@ class WandbConnector:
                               notes=self.notes,
                               tags=self.tags,
                               config=self.config,
-                              reinit=True)  # mode='offline')  # set this if online mode is failing
+                              reinit=True,
+                              mode=self.mode)
 
-        return wandb.config
+        # save configuration
+        self.wandb_config = wandb.config
 
     def watch(self, model):
         """
@@ -108,7 +101,7 @@ class WandbConnector:
         for key, value in updates_dict.items():
             wandb.run.summary[key] = value
 
-    def _concatenate_run_metrics(self, metric, epoch):
+    def concatenate_run_metrics(self, metric, epoch):
         """
         Pull values for all runs for a given (epoch,metric) and combine runs into a single DataFrame.
         Args:
@@ -117,7 +110,7 @@ class WandbConnector:
         Returns:DataFrame with (name, epoch, metric) columns and a row for each run.
         """
 
-        runs = self._pull_runs()
+        runs = self.pull_runs()
         valid_run_metrics = []
         for run in runs:
             name = run.name
@@ -149,7 +142,7 @@ class WandbConnector:
         """
 
         # gather the metrics for each valid run
-        metrics_df = self._concatenate_run_metrics(metric, epoch)
+        metrics_df = self.concatenate_run_metrics(metric, epoch)
 
         # temp output
         a = metrics_df[metrics_df['epoch'] == epoch].sort_values(metric)
@@ -158,11 +151,11 @@ class WandbConnector:
         if metrics_df.empty:
             best_name, best_val = None, None
         else:
-            best_name, best_val = _calculate_best_value(metrics_df, metric, epoch, best_is_max)
+            best_name, best_val = self.calculate_best_value(metrics_df, metric, epoch, best_is_max)
 
         return best_name, best_val
 
-    def _pull_runs(self):
+    def pull_runs(self):
         """
         Pull all run data for the entity and project defined in this connector.
         Returns: wandb runs object
@@ -174,38 +167,38 @@ class WandbConnector:
         runs = api.runs(f'{self.entity}/{self.project}')
         return runs
 
+    def calculate_best_value(self, metrics_df, metric, epoch, best_is_max):
 
-def _calculate_best_value(metrics_df, metric, epoch, best_is_max):
-    """
-    Given a DataFrame of runs, determine the best run.
-    Args:
-        metrics_df (DataFrame): DataFrame containing columns (name,epoch,metric) and a row for each run.
-        metric (str): metric to extract
-        epoch (int): epoch number to extract
-        best_is_max (Boolean): True if the best value will be the maximum value
-    Returns:Tuple (str,float) representing the name of the best run and value of the metric of the best run
-    """
+        """
+        Given a DataFrame of runs, determine the best run.
+        Args:
+            metrics_df (DataFrame): DataFrame containing columns (name,epoch,metric) and a row for each run.
+            metric (str): metric to extract
+            epoch (int): epoch number to extract
+            best_is_max (Boolean): True if the best value will be the maximum value
+        Returns:Tuple (str,float) representing the name of the best run and value of the metric of the best run
+        """
 
-    if best_is_max:
-        # find the max value of the metric for each epoch
-        bests = metrics_df.groupby(by='epoch').max().reset_index()
-    else:
-        # find the min
-        bests = metrics_df.groupby(by='epoch').min().reset_index()
+        if best_is_max:
+            # find the max value of the metric for each epoch
+            bests = metrics_df.groupby(by='epoch').max().reset_index()
+        else:
+            # find the min
+            bests = metrics_df.groupby(by='epoch').min().reset_index()
 
-    # choose the best value for the epoch we care about
-    best_val = bests[bests['epoch'] == epoch][metric].item()
-    best_name = metrics_df[metrics_df[metric] == best_val]['name'].iloc[0]
-    return best_name, best_val
+        # choose the best value for the epoch we care about
+        best_val = bests[bests['epoch'] == epoch][metric].item()
+        best_name = metrics_df[metrics_df[metric] == best_val]['name'].iloc[0]
+        return best_name, best_val
 
+    def login(self):
 
-def _login():
-    """
-    Log into wandb.
-    Returns: None
-    """
+        """
+        Log into wandb.
+        Returns: None
+        """
 
-    logging.info('Logging into wandb...')
+        logging.info('Logging into wandb...')
 
-    import wandb
-    wandb.login()
+        import wandb
+        wandb.login()

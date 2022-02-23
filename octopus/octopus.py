@@ -8,7 +8,10 @@ import os
 import sys
 import configparser
 
+import octopus.utilities.configutilities as cu
 from octopus.handlers.logginghandler import LoggingHandler
+from octopus.handlers.packagehandler import PackageHandler
+from octopus.connectors.wandbconnector import WandbConnector
 
 # execute before loading torch
 os.environ['CUDA_LAUNCH_BLOCKING'] = "1"  # better error tracking from gpu
@@ -22,9 +25,11 @@ class Octopus:
 
     def __init__(self, config_file):
         self.config_file = config_file
+        self.packagehandler = PackageHandler()
 
         # placeholders
         self.config = None
+        self.wandbconnector = None
 
     def parse_configuration(self):
         config = configparser.ConfigParser()
@@ -46,7 +51,30 @@ class Octopus:
         logging.info(f'Parsed configuration from {self.config_file}.')
 
     def setup_wandb(self):
-        pass
+        # parse configuration
+        wandb_dir = self.config['wandb']['wandb_dir']
+        entity = self.config['wandb']['entity']
+        run_name = self.config['DEFAULT']['run_name']
+        project = self.config['wandb']['project']
+        notes = self.config['wandb']['notes']
+        tags = cu.to_string_list(self.config['wandb']['tags'])
+        mode = self.config['wandb']['mode']
+
+        # get all hyperparameters from different parts of config so wandb can track things that we might want to change
+        hyper_dict = dict(self.config['hyperparameters'])
+        hyper_dict.update(dict(self.config['model']))
+        hyper_dict.update(dict(self.config['dataloader']))
+        config = hyper_dict
+
+        # initialize connector
+        self.wandbconnector = WandbConnector(wandb_dir, entity, run_name, project, notes, tags, mode, config)
+
+        # install wandb if necessary
+        self.packagehandler.install_package('--upgrade wandb==0.10.8')
+
+        # setup
+        self.wandbconnector.login()
+        self.wandbconnector.initialize_wandb()
 
     def install_packages(self):
         pass

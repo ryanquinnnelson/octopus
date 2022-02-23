@@ -13,7 +13,7 @@ entity = ryanquinnnelson
 project = CMU-02699-PROJECT
 notes = Image Segmentation using GANs
 tags = octopus,GAN,DAN
-
+mode = online
 
 
 
