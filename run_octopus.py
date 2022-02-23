@@ -20,10 +20,10 @@ def main():
     octopus.setup_wandb()
     octopus.install_packages()
     octopus.setup_environment()
+    octopus.load_data()
 
     # octopus.initialize_model()
     # octopus.initialize_model_components()
-    # octopus.initialize_datahandlers()
     # octopus.run_pipeline()
     # octopus.cleanup()
 

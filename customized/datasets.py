@@ -18,13 +18,13 @@ import octopus.utilities.configutilities as cu
 def get_datasets(config):
     # parse configuration
 
-    data_dir = config['data']['data_dir'],
-    train_dir = config['data']['train_dir'],
-    train_target_dir = config['data']['train_target_dir'],
-    val_dir = config['data']['val_dir'],
-    val_target_dir = config['data']['val_target_dir'],
-    test_dir = config['data']['test_dir'],
-    test_target_dir = config['data']['test_target_dir'],
+    data_dir = config['data']['data_dir']
+    train_dir = config['data']['train_dir']
+    train_target_dir = config['data']['train_target_dir']
+    val_dir = config['data']['val_dir']
+    val_target_dir = config['data']['val_target_dir']
+    test_dir = config['data']['test_dir']
+    test_target_dir = config['data']['test_target_dir']
     train_transforms = cu.to_string_list(config['data']['transforms_list'])
 
     idh = ImageDatasetHandler(data_dir,
@@ -144,7 +144,6 @@ class ImageDatasetHandler:
         :param val_class (Dataset): torch Dataset class to use for validation data
         """
 
-        logging.info('Initializing image dataset handler...')
 
         self.data_dir = data_dir
         self.train_dir = train_dir
@@ -159,12 +158,13 @@ class ImageDatasetHandler:
         self.should_normalize_val = True if 'Normalize' in train_transforms else False
         self.should_normalize_test = True if 'Normalize' in train_transforms else False
 
+
+
     def get_train_dataset(self):
         """
         Load training data into memory and initialize the Dataset object.
         :return: Dataset
         """
-
         # initialize dataset
         t = _compose_transforms(self.train_transforms)
         dataset = ImageDataset(self.train_dir, self.train_target_dir, t)

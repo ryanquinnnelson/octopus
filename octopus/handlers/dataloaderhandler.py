@@ -97,7 +97,7 @@ class DataLoaderHandler:
 
     def load_data(self, train_dataset, val_dataset, test_dataset):
 
-        logging.info('Loading data...')
+        logging.info('Loading datahandlers...')
 
         # DataLoaders
         train_dl = self.train_dataloader(train_dataset)
