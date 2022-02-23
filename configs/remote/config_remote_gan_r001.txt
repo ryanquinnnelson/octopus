@@ -3,13 +3,13 @@ run_name = Run-test
 
 
 [debug]
-debug_path = /Users/ryanqnelson/Desktop/test/
+debug_path = /home/ubuntu
 
 
 
 [wandb]
 version = --upgrade wandb==0.10.8
-wandb_dir = /Users/ryanqnelson/Desktop/test
+wandb_dir = /home/ubuntu/wandb
 entity = ryanquinnnelson
 project = CMU-02699-PROJECT
 notes = Image Segmentation using GANs
@@ -29,27 +29,27 @@ val_metric_name=val_acc
 
 [data]
 data_type = image
-data_dir = /Users/ryanqnelson/Desktop/test/data/warwick
-train_dir = /Users/ryanqnelson/Desktop/test/data/warwick/training
-train_target_dir = /Users/ryanqnelson/Desktop/test/data/warwick/training_anno
-val_dir = /Users/ryanqnelson/Desktop/test/data/warwick/a
-val_target_dir = /Users/ryanqnelson/Desktop/test/data/warwick/a_anno
-test_dir = /Users/ryanqnelson/Desktop/test/data/warwick/b
-test_target_dir = /Users/ryanqnelson/Desktop/test/data/warwick/b_anno
+data_dir = /home/ubuntu/data/warwick
+train_dir = /home/ubuntu/data/warwick/training
+train_target_dir = /home/ubuntu/data/warwick/training_anno
+val_dir = /home/ubuntu/data/warwick/a
+val_target_dir = /home/ubuntu/data/warwick/a_anno
+test_dir = /home/ubuntu/data/warwick/b
+test_target_dir = /home/ubuntu/data/warwick/b_anno
 transforms_list = Resize,ToTensor
 
 
 
 
 [output]
-output_dir = /Users/ryanqnelson/Desktop/test/output
+output_dir = /home/ubuntu/output
 
 
 
 [dataloader]
 num_workers=8
 pin_memory=True
-batch_size=2
+batch_size=4
 
 
 [model]	
@@ -58,7 +58,7 @@ model_type=FlexGAN
 
 
 [checkpoint]
-checkpoint_dir = /Users/ryanqnelson/Desktop/test/checkpoints
+checkpoint_dir = /data/checkpoints
 delete_existing_checkpoints = True
 load_from_checkpoint=False
 checkpoint_file =  None

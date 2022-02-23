@@ -112,10 +112,10 @@ class PhaseHandler:
                 self.schedulerhandler.update_scheduler(schedulers[i], curr_stats)
 
             # save model checkpoint
-            if epoch % 5 == 0:
-                self.checkpointhandler.save(models, model_names, optimizers, optimizer_names, schedulers,
-                                            scheduler_names,
-                                            epoch + 1, self.stats)
+            # if epoch % 5 == 0:
+            self.checkpointhandler.save(models, self.model_names, optimizers, self.optimizer_names, schedulers,
+                                        self.scheduler_names,
+                                        epoch + 1, self.stats)
 
             # # check if early stopping criteria is met
             # if self.statshandler.stopping_criteria_is_met(epoch, self.wandbconnector):

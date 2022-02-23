@@ -153,6 +153,19 @@ class Octopus:
         config = self.wandbconnector.wandb_config
         self.models = models.get_models(config)
 
+        moved_models = []
+        for model in self.models:
+
+            # move model if necessary
+            m = self.devicehandler.move_model_to_device(model)  # move before optimizer init - Note 1
+            moved_models.append(m)
+
+            # track model
+            self.wandbconnector.watch(model)
+
+        # replace collection of models with moved version
+        self.models = moved_models
+
         logging.info(f'octopus finished generating the models.')
 
     # TODO: allow for possibility of different types of optimizers/schedulers for each model
