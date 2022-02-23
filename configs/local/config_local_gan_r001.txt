@@ -53,6 +53,10 @@ batch_size=2
 
 
 [model]
+model_names=sn_state_dict,en_state_dict
+optimizer_names=sn_optimizer_state_dict,en_optimizer_state_dict
+scheduler_names=sn_scheduler_state_dict,en_scheduler_state_dict
+
 model_type=FlexGAN
 # remove maxpool2,cnn3 and standardize channel pattern
 layers_list_sn=

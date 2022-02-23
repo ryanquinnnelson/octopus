@@ -49,59 +49,50 @@ class CheckpointHandler:
             fu.delete_directory(self.checkpoint_dir)
 
         fu.create_directory(self.checkpoint_dir)
-    #
-    # def save(self, g_model, g_optimizer, g_scheduler, d_model, d_optimizer, d_scheduler, next_epoch, stats):
-    #     """
-    #     Save current model environment to a checkpoint.
-    #     Args:
-    #         g_model (nn.Module): model to save
-    #         g_optimizer (nn.optim): optimizer to save
-    #         g_scheduler (nn.optim): scheduler to save
-    #         next_epoch (int): next epoch to execute if this model is restored
-    #         stats (Dict): dictionary of statistics for all epochs collected during model training to this point
-    #     Returns: None
-    #     """
-    #     # build filename
-    #     filename = os.path.join(self.checkpoint_dir, f'{self.run_name}.checkpoint.{next_epoch - 1}.pt')
-    #     logging.info(f'Saving checkpoint to {filename}...')
-    #
-    #     # build state dictionary
-    #     checkpoint = {
-    #         'g_model_state_dict': g_model.state_dict(),
-    #         'g_optimizer_state_dict': g_optimizer.state_dict(),
-    #         'g_scheduler_state_dict': g_scheduler.state_dict(),
-    #
-    #         # 'd_model_state_dict': d_model.state_dict(),
-    #         # 'd_optimizer_state_dict': d_optimizer.state_dict(),
-    #         # 'd_scheduler_state_dict': d_scheduler.state_dict(),
-    #
-    #         'next_epoch': next_epoch,
-    #         'stats': stats
-    #     }
-    #
-    #     torch.save(checkpoint, filename)
-    #
-    # def load(self, filename, device, g_model, g_optimizer, g_scheduler, d_model, d_optimizer, d_scheduler):
-    #     """
-    #     Load a previously saved model environment from a checkpoint file, mapping the load based on the device.
-    #     Args:
-    #         filename (str): fully-qualified filename of checkpoint file
-    #         device (torch.device): device on which model was previously running
-    #         g_model (nn.Module): model to update based on checkpoint
-    #         g_optimizer (nn.optim): optimizer to update based on checkpoint
-    #         g_scheduler (nn.optim): scheduler to update based on checkpoint
-    #     Returns: checkpoint object
-    #     """
-    #     logging.info(f'Loading checkpoint from {filename}...')
-    #     checkpoint = torch.load(filename, map_location=device)
-    #
-    #     # reload saved states
-    #     g_model.load_state_dict(checkpoint['g_model_state_dict'])
-    #     g_optimizer.load_state_dict(checkpoint['g_optimizer_state_dict'])
-    #     g_scheduler.load_state_dict(checkpoint['g_scheduler_state_dict'])
-    #
-    #     # d_model.load_state_dict(checkpoint['d_model_state_dict'])
-    #     # d_optimizer.load_state_dict(checkpoint['d_optimizer_state_dict'])
-    #     # d_scheduler.load_state_dict(checkpoint['d_scheduler_state_dict'])
-    #
-    #     return checkpoint
+
+    def save(self, models, model_names, optimizers, optimizer_names, schedulers, scheduler_names, next_epoch, stats):
+
+        # build filename
+        filename = os.path.join(self.checkpoint_dir, f'{self.run_name}.checkpoint.{next_epoch - 1}.pt')
+        logging.info(f'Saving checkpoint to {filename}...')
+
+        # build state dictionary
+        checkpoint = {
+            'next_epoch': next_epoch,
+            'stats': stats
+        }
+
+        # save state for each model, optimizer, scheduler combination
+        for i, model in enumerate(models):
+            model_name = model_names[i]
+            checkpoint[model_name] = model.state_dict()
+
+            optimizer_name = optimizer_names[i]
+            optimizer = optimizers[i]
+            checkpoint[optimizer_name] = optimizer.state_dict()
+
+            scheduler_name = scheduler_names[i]
+            scheduler = schedulers[i]
+            checkpoint[scheduler_name] = scheduler.state_dict()
+
+        torch.save(checkpoint, filename)
+
+    def load(self, filename, device, models, model_names, optimizers, optimizer_names, schedulers, scheduler_names):
+
+        logging.info(f'Loading checkpoint from {filename}...')
+        checkpoint = torch.load(filename, map_location=device)
+
+        # reload saved state for each model, optimizer, scheduler combination
+        for i, model in enumerate(models):
+            model_name = model_names[i]
+            model.load_state_dict(checkpoint[model_name])
+
+            optimizer_name = optimizer_names[i]
+            optimizer = optimizers[i]
+            optimizer.load_state_dict(checkpoint[optimizer_name])
+
+            scheduler_name = scheduler_names[i]
+            scheduler = schedulers[i]
+            scheduler.load_state_dict(checkpoint[scheduler_name])
+
+        return checkpoint

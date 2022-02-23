@@ -194,3 +194,11 @@ class Octopus:
         self.test_loader = test_dl
 
         logging.info(f'octopus is finished loading the data.')
+
+    def load_pipeline(self):
+
+        # stats
+
+        # phases
+
+        pass
