@@ -21,8 +21,8 @@ def main():
     octopus.install_packages()
     octopus.setup_environment()
 
-    # octopus.generate_model()
-    # octopus.generate_model_components()
+    # octopus.initialize_model()
+    # octopus.initialize_model_components()
     # octopus.initialize_datahandlers()
     # octopus.run_pipeline()
     # octopus.cleanup()

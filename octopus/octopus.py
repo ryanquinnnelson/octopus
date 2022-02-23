@@ -17,6 +17,9 @@ from octopus.handlers.outputhandler import OutputHandler
 from octopus.handlers.devicehandler import DeviceHandler
 from octopus.handlers.optimizerhandler import OptimizerHandler
 from octopus.handlers.schedulerhandler import SchedulerHandler
+from octopus.handlers.dataloaderhandler import DataLoaderHandler
+
+import customized.datasets as datasets
 
 # execute before loading torch
 os.environ['CUDA_LAUNCH_BLOCKING'] = "1"  # better error tracking from gpu
@@ -40,11 +43,16 @@ class Octopus:
         self.devicehandler = None
         self.optimizerhandler = None
         self.schedulerhandler = None
+        self.dataloaderhandler = None
+        self.datasethandler = None
 
         # models and components
         self.models = []
         self.optimizers = []
         self.schedulers = []
+        self.train_loader = None
+        self.val_loader = None
+        self.test_loader = None
 
     def parse_configuration(self):
         config = configparser.ConfigParser()
@@ -65,6 +73,7 @@ class Octopus:
         # log configuration file details now that logging is set up
         logging.info(f'Parsed configuration from {self.config_file}.')
 
+    # TODO: revise hyper_dict to have correct data types
     def setup_wandb(self):
         logging.info(f'octopus is setting up wandb...')
         # package handler
@@ -133,7 +142,7 @@ class Octopus:
 
         logging.info('octopus has finished setting up the environment.')
 
-    def generate_model(self):
+    def initialize_model(self):
         logging.info(f'octopus is generating the model...')
 
         # use wandb configs so we can sweep hyperparameters
@@ -141,8 +150,8 @@ class Octopus:
 
         logging.info(f'octopus finished generating the model.')
 
-    # TODO: all for possibility of different types of optimizers/schedulers for each model
-    def generate_model_components(self):
+    # TODO: allow for possibility of different types of optimizers/schedulers for each model
+    def initialize_model_components(self):
         logging.info(f'octopus is generating the model components...')
 
         # use wandb configs so we can sweep hyperparameters
@@ -161,3 +170,27 @@ class Octopus:
             self.schedulers.append(sched)
 
         logging.info(f'octopus finished generating the model components.')
+
+    def load_data(self):
+        logging.info(f'octopus is loading the data...')
+
+        # datasets
+        train_dataset, val_dataset, test_dataset = datasets.get_datasets(self.config)
+
+        # dataloader
+        self.dataloaderhandler = DataLoaderHandler()
+
+        batch_size = self.config['dataloader'].getint('batch_size')
+        num_workers = self.config['dataloader'].getint('num_workers')
+        pin_memory = self.config['dataloader'].getboolean('pin_memory')
+        device = self.devicehandler.get_device()
+
+        self.dataloaderhandler.define_dataloader_args(batch_size, num_workers, pin_memory, device)
+
+        # load data
+        train_dl, val_dl, test_dl = self.dataloaderhandler.load_data(train_dataset, val_dataset, test_dataset)
+        self.train_loader = train_dl
+        self.val_loader = val_dl
+        self.test_loader = test_dl
+
+        logging.info(f'octopus is finished loading the data.')
