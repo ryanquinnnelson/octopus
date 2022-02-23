@@ -66,13 +66,12 @@ class PhaseHandler:
             self.wandbconnector.log_stats(epoch_stats_dict)
 
     # TODO: turn on test phase
-    def process_epochs(self, models, model_names, optimizers, optimizer_names, schedulers,
-                       scheduler_names,
+    def process_epochs(self, models, optimizers, schedulers,
                        train_loader, val_loader, test_loader):
 
         # load checkpoint if necessary
         if self.load_from_checkpoint:
-            self.load_checkpoint(models, model_names, optimizers)
+            self.load_checkpoint(models, optimizers, schedulers)
 
             # submit old stats to wandb to align with other runs
             self.report_previous_stats()

@@ -24,8 +24,8 @@ def main():
     octopus.setup_phasehandler()
     octopus.initialize_models()
     octopus.initialize_model_components()
-    # octopus.run_pipeline()
-    # octopus.cleanup()
+    octopus.run_pipeline()
+    octopus.cleanup()
 
 
 if __name__ == "__main__":

@@ -62,8 +62,8 @@ def calculate_iou_score(i, targets, out):
 class Training:
     def __init__(self, wandb_config, devicehandler):
         self.devicehandler = devicehandler
-        self.sn_criterion = wandb_config.sn_criterion
-        self.en_criterion = wandb_config.en_criterion
+        self.sn_criterion = get_criterion(wandb_config.sn_criterion)
+        self.en_criterion = get_criterion(wandb_config.sn_criterion)
         self.use_gan = wandb_config.use_gan
 
         logging.info(f'Generator criterion for training phase:\n{self.sn_criterion}')
