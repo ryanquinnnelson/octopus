@@ -45,7 +45,7 @@ def calculate_num_hits(i, targets, out):
 
 
 # https://towardsdatascience.com/intersection-over-union-iou-calculation-for-evaluating-an-image-segmentation-model-8b22e2e84686
-def _calculate_iou_score(i, targets, out):
+def calculate_iou_score(i, targets, out):
     targets = targets.cpu().detach().numpy()
 
     # convert to class labels
@@ -170,7 +170,7 @@ class Validation:
 
                 # calculate accuracy
                 actual_hits += calculate_num_hits(i, targets, out)
-                score += _calculate_iou_score(i, targets, out)
+                score += calculate_iou_score(i, targets, out)
 
                 # delete mini-batch from device
                 del inputs
