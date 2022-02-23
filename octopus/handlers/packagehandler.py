@@ -18,7 +18,7 @@ class PackageHandler:
         Initialize PipHandler.
         :param packages_list (List): List of package installation commands
         """
-        logging.info('Initializing pip installations handler...')
+        logging.info('Initializing package handler...')
 
     def install_packages(self, packages_list):
         """

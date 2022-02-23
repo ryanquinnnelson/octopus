@@ -12,6 +12,9 @@ import octopus.utilities.configutilities as cu
 from octopus.handlers.logginghandler import LoggingHandler
 from octopus.handlers.packagehandler import PackageHandler
 from octopus.connectors.wandbconnector import WandbConnector
+from octopus.handlers.checkpointhandler import CheckpointHandler
+from octopus.handlers.outputhandler import OutputHandler
+from octopus.handlers.devicehandler import DeviceHandler
 
 # execute before loading torch
 os.environ['CUDA_LAUNCH_BLOCKING'] = "1"  # better error tracking from gpu
@@ -25,11 +28,14 @@ class Octopus:
 
     def __init__(self, config_file):
         self.config_file = config_file
-        self.packagehandler = PackageHandler()
 
         # placeholders
         self.config = None
+        self.packagehandler = None
         self.wandbconnector = None
+        self.checkpointhandler = None
+        self.outputhandler = None
+        self.devicehandler = None
 
     def parse_configuration(self):
         config = configparser.ConfigParser()
@@ -51,6 +57,14 @@ class Octopus:
         logging.info(f'Parsed configuration from {self.config_file}.')
 
     def setup_wandb(self):
+        logging.info(f'octopus is setting up wandb...')
+        # package handler
+        self.packagehandler = PackageHandler()
+
+        # install wandb if necessary
+        wandb_version = self.config['wandb']['version']
+        self.packagehandler.install_package(wandb_version)
+
         # parse configuration
         wandb_dir = self.config['wandb']['wandb_dir']
         entity = self.config['wandb']['entity']
@@ -69,17 +83,43 @@ class Octopus:
         # initialize connector
         self.wandbconnector = WandbConnector(wandb_dir, entity, run_name, project, notes, tags, mode, config)
 
-        # install wandb if necessary
-        self.packagehandler.install_package('--upgrade wandb==0.10.8')
-
         # setup
         self.wandbconnector.login()
         self.wandbconnector.initialize_wandb()
 
+        logging.info('octopus has finished setting up wandb.')
+
     def install_packages(self):
-        pass
+        logging.info(f'octopus is installing packages...')
+
+        # determine if configuration file has any packages to install
+        if self.config.has_option('pip', 'packages'):
+            packages = self.config['pip']['packages']
+            packages_list = cu.to_string_list(packages)
+            self.packagehandler.install_packages(packages_list)
+
+        logging.info('octopus has finished installing packages.')
 
     def setup_environment(self):
-        pass
+        logging.info(f'octopus is setting up the environment...')
 
+        # checkpoints
+        checkpoint_dir = self.config['checkpoint']['checkpoint_dir']
+        delete_existing_checkpoints = self.config['checkpoint'].getboolean('delete_existing_checkpoints')
+        run_name = self.config['DEFAULT']['run_name']
+        load_from_checkpoint = self.config['checkpoint'].getboolean('load_from_checkpoint')
 
+        self.checkpointhandler = CheckpointHandler(checkpoint_dir, delete_existing_checkpoints, run_name,
+                                                   load_from_checkpoint)
+        self.checkpointhandler.setup_checkpoint_directory()
+
+        # output
+        output_dir = self.config['output']['output_dir']
+        self.outputhandler = OutputHandler(run_name, output_dir)
+        self.outputhandler.setup_output_directory()
+
+        # device
+        self.devicehandler = DeviceHandler()
+        self.devicehandler.set_device()
+
+        logging.info('octopus has finished setting up the environment.')
