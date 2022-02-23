@@ -27,9 +27,9 @@ class PhaseHandler:
         self.first_epoch = 1
         self.num_epochs = num_epochs
 
-    def load_checkpoint(self, models, optimizers, schedulers):
+    def load_checkpoint(self, models_list, optimizers, schedulers):
         device = self.devicehandler.get_device()
-        checkpoint = self.checkpointhandler.load(self.checkpoint_file, device, models, self.model_names, optimizers,
+        checkpoint = self.checkpointhandler.load(self.checkpoint_file, device, models_list, self.model_names, optimizers,
                                                  self.optimizer_names, schedulers, self.scheduler_names)
 
         # restore stats
@@ -66,29 +66,30 @@ class PhaseHandler:
             self.wandbconnector.log_stats(epoch_stats_dict)
 
     # TODO: turn on test phase
-    def process_epochs(self, models, optimizers, schedulers,
+    def process_epochs(self, models_list, optimizers, schedulers,
                        train_loader, val_loader, test_loader):
 
         # load checkpoint if necessary
         if self.load_from_checkpoint:
-            self.load_checkpoint(models, optimizers, schedulers)
+            self.load_checkpoint(models_list, optimizers, schedulers)
 
             # submit old stats to wandb to align with other runs
             self.report_previous_stats()
 
         # run epochs
         for epoch in range(self.first_epoch, self.num_epochs + 1):
+            logging.info(f'stats:{self.stats}')
             # record start time
             start = time.time()
 
             # train
-            train_stats = self.training.run_epoch(epoch, self.num_epochs, models, optimizers, train_loader)
+            train_stats = self.training.run_epoch(epoch, self.num_epochs, models_list, optimizers, train_loader)
 
             # validate
-            val_stats = self.validation.run_epoch(epoch, self.num_epochs, models, val_loader)
+            val_stats = self.validation.run_epoch(epoch, self.num_epochs, models_list, val_loader)
 
             # testing
-            # test_stats = self.testing.run_epoch(epoch, self.num_epochs, models, test_loader)
+            # test_stats = self.testing.run_epoch(epoch, self.num_epochs, models_list, test_loader)
             test_stats = {}
 
             # record end time
@@ -108,12 +109,12 @@ class PhaseHandler:
             self.append_stats(curr_stats)
 
             # update scheduler for each model
-            for i, model in enumerate(models):
+            for i, model in enumerate(models_list):
                 self.schedulerhandler.update_scheduler(schedulers[i], curr_stats)
 
             # save model checkpoint
             # if epoch % 5 == 0:
-            self.checkpointhandler.save(models, self.model_names, optimizers, self.optimizer_names, schedulers,
+            self.checkpointhandler.save(models_list, self.model_names, optimizers, self.optimizer_names, schedulers,
                                         self.scheduler_names,
                                         epoch + 1, self.stats)
 

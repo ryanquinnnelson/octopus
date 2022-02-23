@@ -50,7 +50,8 @@ class CheckpointHandler:
 
         fu.create_directory(self.checkpoint_dir)
 
-    def save(self, models, model_names, optimizers, optimizer_names, schedulers, scheduler_names, next_epoch, stats):
+    def save(self, models_list, model_names, optimizers, optimizer_names, schedulers, scheduler_names, next_epoch,
+             stats):
 
         # build filename
         filename = os.path.join(self.checkpoint_dir, f'{self.run_name}.checkpoint.{next_epoch - 1}.pt')
@@ -63,35 +64,42 @@ class CheckpointHandler:
         }
 
         # save state for each model, optimizer, scheduler combination
-        for i, model in enumerate(models):
+        for i, model in enumerate(models_list):
             model_name = model_names[i]
+            logging.info(f'model_name:{model_name}')
             checkpoint[model_name] = model.state_dict()
 
             optimizer_name = optimizer_names[i]
+            logging.info(f'optimizer_name:{optimizer_name}')
             optimizer = optimizers[i]
             checkpoint[optimizer_name] = optimizer.state_dict()
 
             scheduler_name = scheduler_names[i]
+            logging.info(f'scheduler_name:{scheduler_name}')
             scheduler = schedulers[i]
             checkpoint[scheduler_name] = scheduler.state_dict()
 
         torch.save(checkpoint, filename)
 
-    def load(self, filename, device, models, model_names, optimizers, optimizer_names, schedulers, scheduler_names):
+    def load(self, filename, device, models_list, model_names, optimizers, optimizer_names, schedulers,
+             scheduler_names):
 
         logging.info(f'Loading checkpoint from {filename}...')
         checkpoint = torch.load(filename, map_location=device)
 
         # reload saved state for each model, optimizer, scheduler combination
-        for i, model in enumerate(models):
+        for i, model in enumerate(models_list):
             model_name = model_names[i]
+            logging.info(f'model_name:{model_name}')
             model.load_state_dict(checkpoint[model_name])
 
             optimizer_name = optimizer_names[i]
+            logging.info(f'optimizer_name:{optimizer_name}')
             optimizer = optimizers[i]
             optimizer.load_state_dict(checkpoint[optimizer_name])
 
             scheduler_name = scheduler_names[i]
+            logging.info(f'scheduler_name:{scheduler_name}')
             scheduler = schedulers[i]
             scheduler.load_state_dict(checkpoint[scheduler_name])
 

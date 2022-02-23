@@ -124,8 +124,10 @@ class Training:
         d_train_loss /= len(train_loader)
 
         # build stat dictionary
+        g_lr = g_optimizer.state_dict()["param_groups"][0]["lr"]
         stats = {'g_train_loss': g_train_loss, 'd_train_loss': d_train_loss,
-                 'd_train_loss_unannotated': d_train_loss_unannotated, 'd_train_loss_annotated': d_train_loss_annotated}
+                 'd_train_loss_unannotated': d_train_loss_unannotated, 'd_train_loss_annotated': d_train_loss_annotated,
+                 'g_lr': g_lr}
 
         return stats
 

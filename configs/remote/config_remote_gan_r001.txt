@@ -60,8 +60,8 @@ model_type=FlexGAN
 [checkpoint]
 checkpoint_dir = /data/checkpoints
 delete_existing_checkpoints = True
-load_from_checkpoint=False
-checkpoint_file =  None
+load_from_checkpoint=True
+checkpoint_file =  /data/checkpoints/Run-test.checkpoint.1.pt
 model_names=sn_state_dict,en_state_dict
 optimizer_names=sn_optimizer_state_dict,en_optimizer_state_dict
 scheduler_names=sn_scheduler_state_dict,en_scheduler_state_dict

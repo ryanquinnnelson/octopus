@@ -50,7 +50,7 @@ class Octopus:
         self.phasehandler = None
 
         # models and components
-        self.models = []
+        self.models_list = []
         self.optimizers = []
         self.schedulers = []
         self.train_loader = None
@@ -146,49 +146,6 @@ class Octopus:
 
         logging.info('octopus has finished setting up the environment.')
 
-    def initialize_models(self):
-        logging.info(f'octopus is generating the models...')
-
-        # use wandb configs so we can sweep hyperparameters
-        config = self.wandbconnector.wandb_config
-        self.models = models.get_models(config)
-
-        moved_models = []
-        for model in self.models:
-
-            # move model if necessary
-            m = self.devicehandler.move_model_to_device(model)  # move before optimizer init - Note 1
-            moved_models.append(m)
-
-            # track model
-            self.wandbconnector.watch(model)
-
-        # replace collection of models with moved version
-        self.models = moved_models
-
-        logging.info(f'octopus finished generating the models.')
-
-    # TODO: allow for possibility of different types of optimizers/schedulers for each model
-    def initialize_model_components(self):
-        logging.info(f'octopus is generating the model components...')
-
-        # use wandb configs so we can sweep hyperparameters
-        config = self.wandbconnector.wandb_config
-
-        self.optimizerhandler = OptimizerHandler()
-        self.schedulerhandler = SchedulerHandler()
-
-        # create a separate optimizer and scheduler for each model
-        for model in self.models:
-            # optimizer
-            opt = self.optimizerhandler.get_optimizer(model, config)
-            self.optimizers.append(opt)
-
-            sched = self.schedulerhandler.get_scheduler(opt, config)
-            self.schedulers.append(sched)
-
-        logging.info(f'octopus finished generating the model components.')
-
     def load_data(self):
         logging.info(f'octopus is loading the data...')
 
@@ -212,6 +169,48 @@ class Octopus:
         self.test_loader = test_dl
 
         logging.info(f'octopus is finished loading the data.')
+
+    def initialize_models(self):
+        logging.info(f'octopus is generating the models...')
+
+        # use wandb configs so we can sweep hyperparameters
+        config = self.wandbconnector.wandb_config
+        self.models_list = models.get_models(config)
+
+        moved_models = []
+        for model in self.models_list:
+            # move model if necessary
+            m = self.devicehandler.move_model_to_device(model)  # move before optimizer init - Note 1
+            moved_models.append(m)
+
+            # track model
+            self.wandbconnector.watch(model)
+
+        # replace collection of models with moved version
+        self.models_list = moved_models
+
+        logging.info(f'octopus finished generating the models.')
+
+    # TODO: allow for possibility of different types of optimizers/schedulers for each model
+    def initialize_model_components(self):
+        logging.info(f'octopus is generating the model components...')
+
+        # use wandb configs so we can sweep hyperparameters
+        config = self.wandbconnector.wandb_config
+
+        self.optimizerhandler = OptimizerHandler()
+        self.schedulerhandler = SchedulerHandler()
+
+        # create a separate optimizer and scheduler for each model
+        for model in self.models_list:
+            # optimizer
+            opt = self.optimizerhandler.get_optimizer(model, config)
+            self.optimizers.append(opt)
+
+            sched = self.schedulerhandler.get_scheduler(opt, config)
+            self.schedulers.append(sched)
+
+        logging.info(f'octopus finished generating the model components.')
 
     def setup_phasehandler(self):
         logging.info(f'octopus is loading the phase handler...')
@@ -248,7 +247,7 @@ class Octopus:
         """
         logging.info('octopus is running the pipeline...')
 
-        self.phasehandler.process_epochs(self.models, self.optimizers,
+        self.phasehandler.process_epochs(self.models_list, self.optimizers,
                                          self.schedulers,
                                          self.train_loader, self.val_loader,
                                          self.test_loader)
