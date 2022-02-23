@@ -3,11 +3,11 @@ Wrapper script to run octopus.
 """
 __author__ = 'ryanquinnnelson'
 
-
 import sys
 import logging
 
 from octopus.octopus import Octopus
+
 
 def main():
     # run octopus using config file found in the path
@@ -20,7 +20,10 @@ def main():
     octopus.setup_wandb()
     octopus.install_packages()
     octopus.setup_environment()
-    # octopus.initialize_pipeline_components()
+
+    # octopus.generate_model()
+    # octopus.generate_model_components()
+    # octopus.initialize_datahandlers()
     # octopus.run_pipeline()
     # octopus.cleanup()
 

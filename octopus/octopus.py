@@ -15,6 +15,8 @@ from octopus.connectors.wandbconnector import WandbConnector
 from octopus.handlers.checkpointhandler import CheckpointHandler
 from octopus.handlers.outputhandler import OutputHandler
 from octopus.handlers.devicehandler import DeviceHandler
+from octopus.handlers.optimizerhandler import OptimizerHandler
+from octopus.handlers.schedulerhandler import SchedulerHandler
 
 # execute before loading torch
 os.environ['CUDA_LAUNCH_BLOCKING'] = "1"  # better error tracking from gpu
@@ -36,6 +38,13 @@ class Octopus:
         self.checkpointhandler = None
         self.outputhandler = None
         self.devicehandler = None
+        self.optimizerhandler = None
+        self.schedulerhandler = None
+
+        # models and components
+        self.models = []
+        self.optimizers = []
+        self.schedulers = []
 
     def parse_configuration(self):
         config = configparser.ConfigParser()
@@ -123,3 +132,32 @@ class Octopus:
         self.devicehandler.set_device()
 
         logging.info('octopus has finished setting up the environment.')
+
+    def generate_model(self):
+        logging.info(f'octopus is generating the model...')
+
+        # use wandb configs so we can sweep hyperparameters
+        config = self.wandbconnector.wandb_config
+
+        logging.info(f'octopus finished generating the model.')
+
+    # TODO: all for possibility of different types of optimizers/schedulers for each model
+    def generate_model_components(self):
+        logging.info(f'octopus is generating the model components...')
+
+        # use wandb configs so we can sweep hyperparameters
+        config = self.wandbconnector.wandb_config
+
+        self.optimizerhandler = OptimizerHandler()
+        self.schedulerhandler = SchedulerHandler()
+
+        # create a separate optimizer and scheduler for each model
+        for model in self.models:
+            # optimizer
+            opt = self.optimizerhandler.get_optimizer(model, config)
+            self.optimizers.append(opt)
+
+            sched = self.schedulerhandler.get_scheduler(opt, config)
+            self.schedulers.append(sched)
+
+        logging.info(f'octopus finished generating the model components.')
