@@ -1,3 +1,4 @@
+name: sweep_local_test
 program: /Users/ryanqnelson/GitHub/ryanquinnnelson/octopus/run_octopus.py
 method: grid
 project: octopus

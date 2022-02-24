@@ -7,7 +7,6 @@ debug_path = /Users/ryanqnelson/Desktop/test/
 
 
 [wandb]
-version = --upgrade wandb==0.10.8
 wandb_dir = /Users/ryanqnelson/Desktop/test
 entity = ryanquinnnelson
 project = octopus
