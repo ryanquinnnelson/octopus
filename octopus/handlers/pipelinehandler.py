@@ -1,13 +1,6 @@
 import logging
 import time
 
-'''
-self.wandbconnector, self.devicehandler, checkpointhandler,
-                                               training_phase, val_phase, test_phase, 
-                                               checkpoint_file,load_from_checkpoint, num_epochs
-'''
-
-
 # TODO: check against early stopping criteria
 class PipelineHandler:
     def __init__(self, wandbconnector, devicehandler, checkpointhandler,
@@ -94,7 +87,6 @@ class PipelineHandler:
                 epoch_stats_dict[key] = self.stats[key][i]
             self.wandbconnector.log_stats(epoch_stats_dict)
 
-    # TODO: turn on test phase
     def process_epochs(self):
 
         # load checkpoint if necessary
@@ -117,8 +109,7 @@ class PipelineHandler:
             val_stats = self.validation.run_epoch(epoch, self.num_epochs, self.models)
 
             # testing
-            # test_stats = self.testing.run_epoch(epoch, self.num_epochs, self.models)
-            test_stats = {}
+            test_stats = self.testing.run_epoch(epoch, self.num_epochs, self.models)
 
             # record end time
             end = time.time()

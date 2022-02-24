@@ -15,7 +15,7 @@ import torchvision.transforms as transforms
 import customized.helper as helper
 
 
-class ImageDatasetHandler:
+class DatasetHandler:
     def __init__(self, data_dir):
         """
         Initialize NumericalDatasetHandler.

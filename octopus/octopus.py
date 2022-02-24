@@ -33,12 +33,12 @@ class Octopus:
         self.modelhandler = modelhandler
         self.optimizerhandler = optimizerhandler
         self.schedulerhandler = schedulerhandler
+        self.output_dir = self.config['output']['output_dir']
 
         # fixed
         self.wandbconnector = None
         self.devicehandler = None
         self.pipelinehandler = None
-        self.output_dir = self.config['output']['output_dir']
 
         # data
         self.train_loader = None
@@ -105,6 +105,31 @@ class Octopus:
 
         logging.info('octopus has finished setting up the environment.')
 
+    def load_data(self):
+        logging.info(f'octopus is loading the data...')
+
+        # datasets
+        train_dataset = self.datasethandler.get_train_dataset(self.config)
+        val_dataset = self.datasethandler.get_val_dataset(self.config)
+        test_dataset = self.datasethandler.get_test_dataset(self.config)
+
+        # dataloader
+        batch_size = self.config['dataloader'].getint('batch_size')
+        num_workers = self.config['dataloader'].getint('num_workers')
+        pin_memory = self.config['dataloader'].getboolean('pin_memory')
+        dataloaderhandler = DataLoaderHandler(batch_size, num_workers, pin_memory)
+
+        device = self.devicehandler.get_device()
+        dataloaderhandler.define_dataloader_args(device)
+
+        # load data
+        train_dl, val_dl, test_dl = dataloaderhandler.load_data(train_dataset, val_dataset, test_dataset)
+        self.train_loader = train_dl
+        self.val_loader = val_dl
+        self.test_loader = test_dl
+
+        logging.info(f'octopus is finished loading the data.')
+
     def setup_wandb(self):
         logging.info(f'octopus is setting up wandb...')
         # parse configuration
@@ -133,31 +158,6 @@ class Octopus:
         self.wandbconnector.initialize_wandb()
 
         logging.info('octopus has finished setting up wandb.')
-
-    def load_data(self):
-        logging.info(f'octopus is loading the data...')
-
-        # datasets
-        train_dataset = self.datasethandler.get_train_dataset(self.config)
-        val_dataset = self.datasethandler.get_val_dataset(self.config)
-        test_dataset = self.datasethandler.get_test_dataset(self.config)
-
-        # dataloader
-        batch_size = self.config['dataloader'].getint('batch_size')
-        num_workers = self.config['dataloader'].getint('num_workers')
-        pin_memory = self.config['dataloader'].getboolean('pin_memory')
-        dataloaderhandler = DataLoaderHandler(batch_size, num_workers, pin_memory)
-
-        device = self.devicehandler.get_device()
-        dataloaderhandler.define_dataloader_args(device)
-
-        # load data
-        train_dl, val_dl, test_dl = dataloaderhandler.load_data(train_dataset, val_dataset, test_dataset)
-        self.train_loader = train_dl
-        self.val_loader = val_dl
-        self.test_loader = test_dl
-
-        logging.info(f'octopus is finished loading the data.')
 
     def initialize_models(self):
         logging.info(f'octopus is generating the models...')

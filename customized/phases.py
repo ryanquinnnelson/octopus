@@ -299,22 +299,22 @@ class Testing:
         self.test_loader = test_loader
 
     def run_epoch(self, epoch, num_epochs, models):
-        logging.info(f'Running epoch {epoch}/{num_epochs} of evaluation...')
+        logging.info(f'Running epoch {epoch}/{num_epochs} of testing...')
 
-        g_model = models[0]
-        with torch.no_grad():  # deactivate autograd engine to improve efficiency
+        # g_model = models[0]
+        # with torch.no_grad():  # deactivate autograd engine to improve efficiency
+        #
+        #     # Set model in validation mode
+        #     g_model.eval()
+        #
+        #     # process mini-batches
+        #     for i, (inputs, targets) in enumerate(self.test_loader):
+        #         # prep
+        #         inputs, targets = self.devicehandler.move_data_to_device(g_model, inputs, targets)
+        #
+        #         # compute forward pass
+        #         out = g_model.forward(inputs)
+        #
+        #         # format and save output
 
-            # Set model in validation mode
-            g_model.eval()
-
-            # process mini-batches
-            for i, (inputs, targets) in enumerate(self.test_loader):
-                # prep
-                inputs, targets = self.devicehandler.move_data_to_device(g_model, inputs, targets)
-
-                # compute forward pass
-                out = g_model.forward(inputs)
-
-                # format and save output
-
-            return {}  # empty dictionary
+        return {}  # empty dictionary

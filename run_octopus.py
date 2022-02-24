@@ -9,7 +9,7 @@ import configparser
 
 from octopus.octopus import Octopus
 
-from customized.datasets import ImageDatasetHandler
+from customized.datasets import DatasetHandler
 from customized.models import ModelHandler
 from customized.phases import PhaseHandler
 from customized.optimizers import OptimizerHandler
@@ -26,7 +26,7 @@ def main():
     config.read(config_file)
 
     # parse configurations for dataset handler
-    idh = ImageDatasetHandler(config['data']['data_dir'])
+    idh = DatasetHandler(config['data']['data_dir'])
     ph = PhaseHandler()
     mh = ModelHandler()
     oh = OptimizerHandler()
