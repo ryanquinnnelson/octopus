@@ -94,9 +94,6 @@ class Training:
         self.sigma_weight = wandb_config.sigma_weight
         self.gan_start_epoch = wandb_config.gan_start_epoch
 
-        logging.info(f'Generator criterion for training phase:\n{self.sn_criterion}')
-        logging.info(f'Discriminator criterion for training phase:\n{self.en_criterion}')
-
     def run_epoch(self, epoch, num_epochs, models, optimizers):
         logging.info(f'Running epoch {epoch}/{num_epochs} of training...')
 
@@ -235,8 +232,6 @@ class Validation:
         self.devicehandler = devicehandler
         self.dataloader = dataloader
         self.criterion = get_criterion(wandb_config.sn_criterion)
-
-        logging.info(f'Generator criterion for validation phase:\n{self.criterion}')
 
     def run_epoch(self, epoch, num_epochs, models):
         logging.info(f'Running epoch {epoch}/{num_epochs} of evaluation...')

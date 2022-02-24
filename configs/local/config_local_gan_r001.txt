@@ -32,9 +32,7 @@ checkpoint_dir = /Users/ryanqnelson/Desktop/test/checkpoints
 delete_existing_checkpoints = True
 load_from_checkpoint=False
 checkpoint_file =  None
-model_names=sn_state_dict,en_state_dict
-optimizer_names=sn_optimizer_state_dict,en_optimizer_state_dict
-scheduler_names=sn_scheduler_state_dict,en_scheduler_state_dict
+
 
 [stats]
 comparison_metric=val_acc
@@ -82,3 +80,6 @@ scheduler_min_lr=0.00001
 resize_height = 224
 resize_width = 332
 use_gan = False
+sigma=0.1
+sigma_weight=300
+gan_start_epoch=2

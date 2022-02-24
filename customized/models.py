@@ -7,15 +7,15 @@ class ModelHandler:
     def __init__(self):
         pass
 
-# TODO: revise models to modular, accept argument for which model type to use
-def get_models(wandb_config):
-    sn = SegmentationNetwork()
-    en = EvaluationNetwork()
+    # TODO: revise models to modular, accept argument for which model type to use
+    def get_models(self, wandb_config):
+        sn = SegmentationNetwork()
+        en = EvaluationNetwork()
 
-    logging.info(f'Generator model initialized:\n{sn}')
-    logging.info(f'Discriminator model initialized:\n{en}')
+        logging.info(f'Generator model initialized:\n{sn}')
+        logging.info(f'Discriminator model initialized:\n{en}')
 
-    return [sn, en]
+        return [sn, en], ['sn_model', 'en_model']
 
 
 def _init_weights(layer):

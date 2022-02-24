@@ -10,12 +10,10 @@ from octopus.handlers.logginghandler import LoggingHandler
 from octopus.handlers.packagehandler import PackageHandler
 from octopus.handlers.directoryhandler import DirectoryHandler
 from octopus.connectors.wandbconnector import WandbConnector
-from octopus.handlers.checkpointhandler import CheckpointHandler
 from octopus.handlers.devicehandler import DeviceHandler
-from octopus.handlers.optimizerhandler import OptimizerHandler
-from octopus.handlers.schedulerhandler import SchedulerHandler
 from octopus.handlers.dataloaderhandler import DataLoaderHandler
-from octopus.handlers.phaserunner import PhaseHandler
+from octopus.handlers.checkpointhandler import CheckpointHandler
+from octopus.handlers.pipelinehandler import PipelineHandler
 
 
 class Octopus:
@@ -39,9 +37,8 @@ class Octopus:
 
         # fixed
         self.wandbconnector = None
-        self.checkpointhandler = None
         self.devicehandler = None
-        self.phaserunner = None
+        self.pipelinehandler = None
 
         # data
         self.train_loader = None
@@ -49,9 +46,12 @@ class Octopus:
         self.test_loader = None
 
         # models and components
-        self.models_list = []
-        self.optimizers_list = []
-        self.schedulers_list = []
+        self.models = []
+        self.model_names = []
+        self.optimizers = []
+        self.optimizer_names = []
+        self.schedulers = []
+        self.scheduler_names = []
 
     def setup_logging(self):
         # parse configuration
@@ -160,75 +160,94 @@ class Octopus:
 
         logging.info(f'octopus is finished loading the data.')
 
-    # def initialize_models(self):
-    #     logging.info(f'octopus is generating the models...')
-    #
-    #     # use wandb configs so we can sweep hyperparameters
-    #     config = self.wandbconnector.wandb_config
-    #     self.models_list = models.get_models(config)
-    #
-    #     moved_models = []
-    #     for model in self.models_list:
-    #         # move model if necessary
-    #         m = self.devicehandler.move_model_to_device(model)  # move before optimizer init - Note 1
-    #         moved_models.append(m)
-    #
-    #         # track model
-    #         self.wandbconnector.watch(model)
-    #
-    #     # replace collection of models with moved version
-    #     self.models_list = moved_models
-    #
-    #     logging.info(f'octopus finished generating the models.')
-    #
-    # # TODO: allow for possibility of different types of optimizers/schedulers for each model
-    # def initialize_model_components(self):
-    #     logging.info(f'octopus is generating the model components...')
-    #
-    #     # use wandb configs so we can sweep hyperparameters
-    #     config = self.wandbconnector.wandb_config
-    #
-    #     self.optimizerhandler = OptimizerHandler()
-    #     self.schedulerhandler = SchedulerHandler()
-    #
-    #     # create a separate optimizer and scheduler for each model
-    #     for model in self.models_list:
-    #         # optimizer
-    #         opt = self.optimizerhandler.get_optimizer(model, config)
-    #         self.optimizers_list.append(opt)
-    #
-    #         sched = self.schedulerhandler.get_scheduler(opt, config)
-    #         self.schedulers_list.append(sched)
-    #
-    #     logging.info(f'octopus finished generating the model components.')
-    #
-    # def setup_phasehandler(self):
-    #     logging.info(f'octopus is loading the phase handler...')
-    #
-    #     if self.config.has_option('checkpoint', 'checkpoint_file'):
-    #         checkpoint_file = self.config['checkpoint']['checkpoint_file']
-    #     else:
-    #         checkpoint_file = None
-    #
-    #     num_epochs = self.config['hyperparameters'].getint('num_epochs')
-    #     load_from_checkpoint = self.config['checkpoint'].getboolean('load_from_checkpoint')
-    #     model_names = cu.to_string_list(self.config['checkpoint']['model_names'])
-    #     optimizer_names = cu.to_string_list(self.config['checkpoint']['optimizer_names'])
-    #     scheduler_names = cu.to_string_list(self.config['checkpoint']['scheduler_names'])
-    #
-    #     # use wandb configs so we can sweep hyperparameters
-    #     wandb_config = self.wandbconnector.wandb_config
-    #     training, validation, testing = phases.get_phases(wandb_config, self.devicehandler, self.environmenthandler,
-    #                                                       self.train_loader, self.val_loader,
-    #                                                       self.test_loader)
-    #
-    #     self.phasehandler = PhaseHandler(num_epochs, self.devicehandler, self.checkpointhandler, self.schedulerhandler,
-    #                                      self.wandbconnector, training, validation, testing, model_names,
-    #                                      optimizer_names, scheduler_names, load_from_checkpoint,
-    #                                      checkpoint_file)
-    #
-    #     logging.info(f'octopus is finished loading the phase handler...')
-    #
+    def initialize_models(self):
+        logging.info(f'octopus is generating the models...')
+
+        # use wandb configs so we can sweep hyperparameters
+        config = self.wandbconnector.wandb_config
+        self.models, self.model_names = self.modelhandler.get_models(config)
+
+        moved_models = []
+        for model in self.models:
+            # move model if necessary
+            m = self.devicehandler.move_model_to_device(model)  # move before optimizer init - Note 1
+            moved_models.append(m)
+
+            # track model
+            self.wandbconnector.watch(model)
+
+        # replace collection of models with moved version
+        self.models = moved_models
+
+        logging.info(f'octopus finished generating the models.')
+
+    # TODO: allow for possibility of different types of optimizers/schedulers for each model
+    def initialize_model_components(self):
+        logging.info(f'octopus is generating the model components...')
+
+        # use wandb configs so we can sweep hyperparameters
+        config = self.wandbconnector.wandb_config
+
+        # optimizers
+        self.optimizers, self.optimizer_names = self.optimizerhandler.get_optimizers(self.models, config)
+
+        # schedulers
+        self.schedulers, self.scheduler_names = self.schedulerhandler.get_schedulers(self.optimizers, config)
+
+        logging.info(f'octopus finished generating the model components.')
+
+    def setup_pipeline_components(self):
+        logging.info(f'octopus is setting up pipeline components...')
+
+        # use wandb configs so we can sweep hyperparameters
+        config = self.wandbconnector.wandb_config
+
+        # checkpointing
+        checkpoint_dir = self.config['checkpoint']['checkpoint_dir']
+        delete_existing_checkpoints = self.config['checkpoint'].getboolean('delete_existing_checkpoints')
+        run_name = self.config['DEFAULT']['run_name']
+        load_from_checkpoint = self.config['checkpoint'].getboolean('load_from_checkpoint')
+
+        checkpointhandler = CheckpointHandler(checkpoint_dir, delete_existing_checkpoints, run_name,
+                                              load_from_checkpoint)
+
+        # phases
+        training_phase = self.phasehandler.get_train_phase(self.devicehandler, self.train_loader, config)
+        val_phase = self.phasehandler.get_train_phase(self.devicehandler, self.val_loader, config)
+        test_phase = self.phasehandler.get_train_phase(self.devicehandler, self.test_loader, config)
+
+        # pipeline handler
+        if self.config.has_option('checkpoint', 'checkpoint_file'):
+            checkpoint_file = self.config['checkpoint']['checkpoint_file']
+        else:
+            checkpoint_file = None
+        load_from_checkpoint = self.config['checkpoint'].getboolean('load_from_checkpoint')
+        num_epochs = self.config['hyperparameters'].getint('num_epochs')
+
+        if self.config.has_option('hyperparameters', 'scheduler_plateau_metric'):
+            scheduler_plateau_metric = self.config['hyperparameters']['scheduler_plateau_metric']
+        else:
+            scheduler_plateau_metric = None
+
+        self.pipelinehandler = PipelineHandler(self.wandbconnector,
+                                               self.devicehandler,
+                                               checkpointhandler,
+                                               self.models,
+                                               self.optimizers,
+                                               self.schedulers,
+                                               self.model_names,
+                                               self.optimizer_names,
+                                               self.scheduler_names,
+                                               training_phase,
+                                               val_phase,
+                                               test_phase,
+                                               checkpoint_file,
+                                               load_from_checkpoint,
+                                               num_epochs,
+                                               scheduler_plateau_metric)
+
+        logging.info(f'octopus is finished setting up pipeline components.')
+
     # def run_pipeline(self):
     #     """
     #     Run training, validation, and test phases of training for all epochs.
