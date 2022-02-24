@@ -137,15 +137,3 @@ class WandbConnector:
 
         runs = api.runs(f'{self.entity}/{self.project}')
         return runs
-
-    def login(self):
-
-        """
-        Log into wandb.
-        Returns: None
-        """
-
-        logging.info('Logging into wandb...')
-
-        import wandb
-        wandb.login()

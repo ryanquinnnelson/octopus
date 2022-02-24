@@ -7,7 +7,6 @@ import logging
 
 import octopus.utilities.configutilities as cu
 from octopus.handlers.logginghandler import LoggingHandler
-from octopus.handlers.packagehandler import PackageHandler
 from octopus.handlers.directoryhandler import DirectoryHandler
 from octopus.connectors.wandbconnector import WandbConnector
 from octopus.handlers.devicehandler import DeviceHandler
@@ -87,18 +86,6 @@ class Octopus:
         # output directory
         directoryhandler.create_directory(self.output_dir)
 
-        # install wandb and other packages
-        logging.info(f'octopus is installing packages...')
-
-        packagehandler = PackageHandler()
-        wandb_version = self.config['wandb']['version']
-        packagehandler.install_package(wandb_version)
-
-        if self.config.has_option('pip', 'packages'):
-            packages = self.config['pip']['packages']
-            packages_list = cu.to_string_list(packages)
-            packagehandler.install_packages(packages_list)
-
         # define device
         self.devicehandler = DeviceHandler()
 
@@ -151,7 +138,6 @@ class Octopus:
         self.wandbconnector = WandbConnector(wandb_dir, entity, run_name, project, notes, tags, mode, config)
 
         # setup
-        self.wandbconnector.login()
         self.wandbconnector.initialize_wandb()
 
         logging.info('octopus has finished setting up wandb.')

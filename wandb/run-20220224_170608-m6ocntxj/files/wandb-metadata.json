@@ -1,0 +1,25 @@
+{
+    "os": "macOS-10.16-x86_64-i386-64bit",
+    "python": "3.8.11",
+    "heartbeatAt": "2022-02-24T22:06:09.393915",
+    "startedAt": "2022-02-24T22:06:08.358172",
+    "docker": null,
+    "cpu_count": 8,
+    "cuda": null,
+    "args": [
+        "--lr=0.01",
+        "--optimizer_type=sgd"
+    ],
+    "state": "running",
+    "codePath": "run_octopus.py",
+    "program": "/Users/ryanqnelson/GitHub/ryanquinnnelson/octopus/run_octopus.py",
+    "git": {
+        "remote": "git@github.com:ryanquinnnelson/octopus.git",
+        "commit": "62727cd60225cbb8a9062b73b65c158b8a52a09a"
+    },
+    "email": "ryan.q.nelson@gmail.com",
+    "root": "/Users/ryanqnelson/GitHub/ryanquinnnelson/octopus",
+    "host": "Ryans-MBP",
+    "username": "ryanqnelson",
+    "executable": "/opt/anaconda3/envs/cmu-2/bin/python"
+}
