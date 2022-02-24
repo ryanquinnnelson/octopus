@@ -7,7 +7,7 @@ debug_path = /home/ubuntu
 
 
 [wandb]
-wandb_dir = /Users/ryanqnelson/Desktop/test
+wandb_dir = /home/ubuntu/wandb
 entity = ryanquinnnelson
 project = octopus
 notes = Image Segmentation using GANs

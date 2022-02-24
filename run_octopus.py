@@ -20,30 +20,6 @@ os.environ['CUDA_LAUNCH_BLOCKING'] = "1"  # better error tracking from gpu
 
 
 def main():
-    # import wandb
-    #
-    # # Set up your default hyperparameters
-    # hyperparameter_defaults = dict(
-    #     channels=[16, 32],
-    #     batch_size=100,
-    #     learning_rate=0.001,
-    #     optimizer="adam",
-    #     epochs=2,
-    # )
-    #
-    # # Pass your defaults to wandb.init
-    # wandb.init(config=hyperparameter_defaults)
-    # # Access all hyperparameter values through wandb.config
-    # config = wandb.config
-    #
-    # print(config)
-    #
-    # # Log metrics inside your training loop
-    # for epoch in range(config["epochs"]):
-    #     val_acc, val_loss = 1.0, 0.5
-    #     metrics = {"validation_accuracy": val_acc,
-    #                "validation_loss": val_loss}
-    #     wandb.log(metrics)
 
     # get filename from arguments
     config_file = None
