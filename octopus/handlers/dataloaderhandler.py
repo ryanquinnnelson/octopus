@@ -13,7 +13,7 @@ class DataLoaderHandler:
     Defines an object to handle DataLoader objects.
     """
 
-    def __init__(self, batch_size, num_workers, pin_memory):
+    def __init__(self, batch_size, num_workers, pin_memory, device):
         """
         Initialize DataLoaderHandler.
         Args:
@@ -30,6 +30,8 @@ class DataLoaderHandler:
         self.train_args = None
         self.val_args = None
         self.test_args = None
+
+        self.define_dataloader_args(device)
 
     def define_dataloader_args(self, device):
         """

@@ -1,6 +1,7 @@
 import logging
 import time
 
+
 # TODO: check against early stopping criteria
 class PipelineHandler:
     def __init__(self, wandbconnector, devicehandler, checkpointhandler,
@@ -33,7 +34,7 @@ class PipelineHandler:
         self.num_epochs = num_epochs
         self.scheduler_plateau_metric = scheduler_plateau_metric
 
-    def load_checkpoint(self):
+    def _load_checkpoint(self):
         device = self.devicehandler.get_device()
         checkpoint = self.checkpointhandler.load(self.checkpoint_file, device, self.models, self.optimizers,
                                                  self.schedulers,
@@ -45,7 +46,7 @@ class PipelineHandler:
         # set which epoch to start from
         self.first_epoch = checkpoint['next_epoch']
 
-    def append_stats(self, curr_stats_dict):
+    def _append_stats(self, curr_stats_dict):
 
         for key in curr_stats_dict.keys():
             curr_val = curr_stats_dict[key]
@@ -57,7 +58,7 @@ class PipelineHandler:
                 # create new collection for stats
                 self.stats[key] = [curr_val]
 
-    def update_scheduler(self, scheduler, curr_stats):
+    def _update_scheduler(self, scheduler, curr_stats):
         """
         Perform a single scheduler step.
         Args:
@@ -72,7 +73,7 @@ class PipelineHandler:
         else:
             scheduler.step()
 
-    def report_previous_stats(self):
+    def _report_previous_stats(self):
         """
         For each epoch stored in the stats dictionary, send all metrics for that epoch to wandb.
         Args:
@@ -91,10 +92,10 @@ class PipelineHandler:
 
         # load checkpoint if necessary
         if self.load_from_checkpoint:
-            self.load_checkpoint()
+            self._load_checkpoint()
 
             # submit old stats to wandb to align with other runs
-            self.report_previous_stats()
+            self._report_previous_stats()
 
         # run epochs
         for epoch in range(self.first_epoch, self.num_epochs + 1):
@@ -126,11 +127,11 @@ class PipelineHandler:
             logging.info(f'stats:{curr_stats}')
 
             # append current stats to all stats for checkpointing
-            self.append_stats(curr_stats)
+            self._append_stats(curr_stats)
 
             # update scheduler for each model
             for i, model in enumerate(self.models):
-                self.update_scheduler(self.schedulers[i], curr_stats)
+                self._update_scheduler(self.schedulers[i], curr_stats)
 
             # save model checkpoint
             if epoch % self.checkpoint_cadence == 0:

@@ -53,7 +53,7 @@ class Octopus:
         self.schedulers = []
         self.scheduler_names = []
 
-    def setup_logging(self):
+    def _setup_logging(self):
         # parse configuration
         debug_path = self.config['debug']['debug_path']
         run_name = self.config['DEFAULT']['run_name']
@@ -67,7 +67,7 @@ class Octopus:
         # log configuration file details now that logging is set up
         logging.info(f'Parsed configuration from {self.config_file}.')
 
-    def setup_environment(self):
+    def _setup_environment(self):
         logging.info(f'octopus is setting up the environment...')
         logging.info(f'octopus is setting up directories...')
         directoryhandler = DirectoryHandler()
@@ -101,11 +101,10 @@ class Octopus:
 
         # define device
         self.devicehandler = DeviceHandler()
-        self.devicehandler.set_device()
 
         logging.info('octopus has finished setting up the environment.')
 
-    def load_data(self):
+    def _load_data(self):
         logging.info(f'octopus is loading the data...')
 
         # datasets
@@ -117,10 +116,8 @@ class Octopus:
         batch_size = self.config['dataloader'].getint('batch_size')
         num_workers = self.config['dataloader'].getint('num_workers')
         pin_memory = self.config['dataloader'].getboolean('pin_memory')
-        dataloaderhandler = DataLoaderHandler(batch_size, num_workers, pin_memory)
-
         device = self.devicehandler.get_device()
-        dataloaderhandler.define_dataloader_args(device)
+        dataloaderhandler = DataLoaderHandler(batch_size, num_workers, pin_memory, device)
 
         # load data
         train_dl, val_dl, test_dl = dataloaderhandler.load_data(train_dataset, val_dataset, test_dataset)
@@ -130,7 +127,7 @@ class Octopus:
 
         logging.info(f'octopus is finished loading the data.')
 
-    def setup_wandb(self):
+    def _setup_wandb(self):
         logging.info(f'octopus is setting up wandb...')
         # parse configuration
         wandb_dir = self.config['wandb']['wandb_dir']
@@ -159,7 +156,7 @@ class Octopus:
 
         logging.info('octopus has finished setting up wandb.')
 
-    def initialize_models(self):
+    def _initialize_models(self):
         logging.info(f'octopus is generating the models...')
 
         # use wandb configs so we can sweep hyperparameters
@@ -180,7 +177,7 @@ class Octopus:
 
         logging.info(f'octopus finished generating the models.')
 
-    def initialize_model_components(self):
+    def _initialize_model_components(self):
         logging.info(f'octopus is generating the model components...')
 
         # use wandb configs so we can sweep hyperparameters
@@ -194,7 +191,7 @@ class Octopus:
 
         logging.info(f'octopus finished generating the model components.')
 
-    def setup_pipeline(self):
+    def _setup_pipeline(self):
         logging.info(f'octopus is setting up the pipeline...')
 
         # use wandb configs so we can sweep hyperparameters
@@ -250,7 +247,7 @@ class Octopus:
 
         logging.info(f'octopus is finished setting up the pipeline.')
 
-    def run_pipeline(self):
+    def _run_pipeline(self):
         """
         Run training, validation, and test phases of training for all epochs.
         Note 1:
@@ -264,7 +261,7 @@ class Octopus:
 
         logging.info('octopus has finished running the pipeline.')
 
-    def cleanup(self):
+    def _cleanup(self):
         """
         Perform any cleanup steps. Stop wandb logging for the current run to enable multiple runs within a single
         execution of run_octopus.py.
@@ -273,3 +270,14 @@ class Octopus:
         logging.info(f'octopus is cleaning up...')
         self.wandbconnector.run.finish()  # finish logging for this run
         logging.info('octopus cleanup complete.')
+
+    def run(self):
+        self._setup_logging()
+        self._setup_environment()
+        self._setup_wandb()
+        self._load_data()
+        self._initialize_models()
+        self._initialize_model_components()
+        self._setup_pipeline()
+        self._run_pipeline()
+        self._cleanup()

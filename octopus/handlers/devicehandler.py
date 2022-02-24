@@ -19,13 +19,6 @@ class DeviceHandler:
         """
         logging.info('Initializing device handler...')
         self.device = None
-
-    def set_device(self):
-        """
-        Set up device handler. Set the device according to torch.device.
-        Returns: None
-        """
-        logging.info('Setting up device...')
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
         if self.device.type == 'cuda':
