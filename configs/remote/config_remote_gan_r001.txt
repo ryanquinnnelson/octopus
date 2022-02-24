@@ -6,29 +6,30 @@ run_name = Run-test
 debug_path = /home/ubuntu
 
 
-
 [wandb]
 version = --upgrade wandb==0.10.8
-wandb_dir = /home/ubuntu/wandb
+wandb_dir = /Users/ryanqnelson/Desktop/test
 entity = ryanquinnnelson
 project = CMU-02699-PROJECT
 notes = Image Segmentation using GANs
 tags = octopus,GAN,DAN
 mode = online
+config_sections_to_track=dataloader,model,hyperparameters
 
 
-
-[stats]
-comparison_metric=val_acc
-comparison_best_is_max=True
-comparison_patience=40
-val_metric_name=val_acc
+[output]
+output_dir = /home/ubuntu/output
 
 
+[checkpoint]
+checkpoint_dir = /data/checkpoints
+checkpoint_cadence = 2
+delete_existing_checkpoints = True
+load_from_checkpoint=False
+checkpoint_file =  None
 
 
 [data]
-data_type = image
 data_dir = /home/ubuntu/data/warwick
 train_dir = /home/ubuntu/data/warwick/training
 train_target_dir = /home/ubuntu/data/warwick/training_anno
@@ -37,36 +38,24 @@ val_target_dir = /home/ubuntu/data/warwick/a_anno
 test_dir = /home/ubuntu/data/warwick/b
 test_target_dir = /home/ubuntu/data/warwick/b_anno
 transforms_list = Resize,ToTensor
+resize_height = 224
 
 
-
-
-[output]
-output_dir = /home/ubuntu/output
+##########################################################################################
+#                             Sweep parameters below this line                           #
+##########################################################################################
 
 
 
 [dataloader]
 num_workers=8
 pin_memory=True
-batch_size=4
+batch_size=10
 
 
 [model]	
-sn_model_type=ModularDGAN
-en_model_type=ModularFCN
-
-
-
-[checkpoint]
-checkpoint_dir = /data/checkpoints
-delete_existing_checkpoints = True
-load_from_checkpoint=False
-checkpoint_file =  None
-model_names=sn_state_dict,en_state_dict
-optimizer_names=sn_optimizer_state_dict,en_optimizer_state_dict
-scheduler_names=sn_scheduler_state_dict,en_scheduler_state_dict
-
+sn_model_type=ZhengLite
+en_model_type=ZhengLite
 
 
 [hyperparameters]
@@ -82,8 +71,6 @@ scheduler_mode=min
 scheduler_verbose=True
 scheduler_plateau_metric=val_loss
 scheduler_min_lr=0.00001
-resize_height = 224
-resize_width = 332
 use_gan = True
 sigma=0.1
 sigma_weight=300

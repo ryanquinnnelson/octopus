@@ -37,7 +37,7 @@ class DatasetHandler:
         train_dir = config['data']['train_dir']
         train_target_dir = config['data']['train_target_dir']
         train_transforms = helper.to_string_list(config['data']['transforms_list'])
-        resize_height = config['hyperparameters'].getint('resize_height')
+        resize_height = config['data'].getint('resize_height')
 
         # initialize dataset
         t = _compose_transforms(train_transforms, resize_height)
@@ -54,7 +54,7 @@ class DatasetHandler:
         val_dir = config['data']['val_dir']
         val_target_dir = config['data']['val_target_dir']
         train_transforms = helper.to_string_list(config['data']['transforms_list'])
-        resize_height = config['hyperparameters'].getint('resize_height')
+        resize_height = config['data'].getint('resize_height')
 
         # determine whether normalize transform should also be applied to validation and test data
         self.should_normalize_val = True if 'Normalize' in train_transforms else False
@@ -79,7 +79,7 @@ class DatasetHandler:
         test_dir = config['data']['test_dir']
         test_target_dir = config['data']['test_target_dir']
         train_transforms = helper.to_string_list(config['data']['transforms_list'])
-        resize_height = config['hyperparameters'].getint('resize_height')
+        resize_height = config['data'].getint('resize_height')
 
         # determine whether normalize transform should also be applied to validation and test data
         self.should_normalize_test = True if 'Normalize' in train_transforms else False

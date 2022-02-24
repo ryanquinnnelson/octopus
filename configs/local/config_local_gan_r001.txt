@@ -6,7 +6,6 @@ run_name = Run-test
 debug_path = /Users/ryanqnelson/Desktop/test/
 
 
-
 [wandb]
 version = --upgrade wandb==0.10.8
 wandb_dir = /Users/ryanqnelson/Desktop/test
@@ -22,30 +21,15 @@ config_sections_to_track=dataloader,model,hyperparameters
 output_dir = /Users/ryanqnelson/Desktop/test/output
 
 
-[dataloader]
-num_workers=8
-pin_memory=True
-batch_size=10
-
 [checkpoint]
 checkpoint_dir = /Users/ryanqnelson/Desktop/test/checkpoints
+checkpoint_cadence = 2
 delete_existing_checkpoints = True
 load_from_checkpoint=False
 checkpoint_file =  None
-checkpoint_cadence = 2
 
-
-[stats]
-comparison_metric=val_acc
-comparison_best_is_max=True
-comparison_patience=40
-val_metric_name=val_acc
-
-
-##########################################################################################
 
 [data]
-data_type = image
 data_dir = /Users/ryanqnelson/Desktop/test/data/warwick
 train_dir = /Users/ryanqnelson/Desktop/test/data/warwick/training
 train_target_dir = /Users/ryanqnelson/Desktop/test/data/warwick/training_anno
@@ -54,21 +38,28 @@ val_target_dir = /Users/ryanqnelson/Desktop/test/data/warwick/a_anno
 test_dir = /Users/ryanqnelson/Desktop/test/data/warwick/b
 test_target_dir = /Users/ryanqnelson/Desktop/test/data/warwick/b_anno
 transforms_list = Resize,ToTensor
+resize_height = 224
+
+
+##########################################################################################
+#                             Sweep parameters below this line                           #
+##########################################################################################
+
+
+[dataloader]
+num_workers=8
+pin_memory=True
+batch_size=10
 
 
 [model]	
-model_type=FlexGAN
-
-
-
-
-
-
+sn_model_type=ZhengLite
+en_model_type=ZhengLite
 
 [hyperparameters]
 num_epochs = 3
 sn_criterion=CrossEntropyLoss
-en_criterion=CrossEntropyLoss
+en_criterion=BCELoss
 optimizer_type=Adam
 lr=0.002
 scheduler_type=ReduceLROnPlateau
@@ -78,8 +69,6 @@ scheduler_mode=min
 scheduler_verbose=True
 scheduler_plateau_metric=val_loss
 scheduler_min_lr=0.00001
-resize_height = 224
-resize_width = 332
 use_gan = False
 sigma=0.1
 sigma_weight=300
