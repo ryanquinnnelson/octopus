@@ -23,7 +23,7 @@ output_dir = /Users/ryanqnelson/Desktop/test/output
 
 [checkpoint]
 checkpoint_dir = /Users/ryanqnelson/Desktop/test/checkpoints
-checkpoint_cadence = 2
+checkpoint_cadence = 5
 delete_existing_checkpoints = True
 load_from_checkpoint=False
 checkpoint_file =  None
@@ -55,6 +55,7 @@ batch_size=10
 [model]	
 sn_model_type=ZhengLite
 en_model_type=ZhengLite
+
 
 [hyperparameters]
 num_epochs = 3

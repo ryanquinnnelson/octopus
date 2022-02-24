@@ -23,7 +23,7 @@ output_dir = /home/ubuntu/output
 
 [checkpoint]
 checkpoint_dir = /data/checkpoints
-checkpoint_cadence = 2
+checkpoint_cadence = 5
 delete_existing_checkpoints = True
 load_from_checkpoint=False
 checkpoint_file =  None
@@ -44,7 +44,6 @@ resize_height = 224
 ##########################################################################################
 #                             Sweep parameters below this line                           #
 ##########################################################################################
-
 
 
 [dataloader]

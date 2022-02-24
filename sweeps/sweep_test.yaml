@@ -1,0 +1,11 @@
+program: ~\octopus\run_octopus.py ~\octopus\config\remote\config_remote_gan_r001.txt
+method: grid
+metric:
+  goal: minimize
+  name: val_loss
+parameters:
+  lr:
+    values: [0.001, 0.01, 0.1]
+  optimizer:
+    values: ["adam", "sgd"]
+

@@ -42,11 +42,11 @@ class OptimizerHandler:
         Returns: nn.optim optimizer
         """
         opt = None
-        if wandb_config.optimizer_type == 'Adam':
+        if wandb_config.optimizer_type == 'adam':
             lr = wandb_config.lr
             opt = optim.Adam(model.parameters(), lr=lr)
 
-        elif wandb_config.optimizer_type == 'SGD':
+        elif wandb_config.optimizer_type == 'sgd':
             lr = wandb_config.lr
             opt = optim.SGD(model.parameters(), lr=lr)
 
