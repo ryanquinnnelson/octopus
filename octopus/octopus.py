@@ -19,7 +19,6 @@ from octopus.handlers.pipelinehandler import PipelineHandler
 class Octopus:
     """
     Class that manages the building and training of deep learning models.
-    Parses configuration and passes values into other classes.
     """
 
     def __init__(self, config_file, config, datasethandler, phasehandler, modelhandler, optimizerhandler,
@@ -39,6 +38,7 @@ class Octopus:
         self.wandbconnector = None
         self.devicehandler = None
         self.pipelinehandler = None
+        self.output_dir = self.config['output']['output_dir']
 
         # data
         self.train_loader = None
@@ -85,8 +85,7 @@ class Octopus:
         directoryhandler.create_directory(checkpoint_dir)
 
         # output directory
-        output_dir = self.config['output']['output_dir']
-        directoryhandler.create_directory(output_dir)
+        directoryhandler.create_directory(self.output_dir)
 
         # install wandb and other packages
         logging.info(f'octopus is installing packages...')
@@ -181,7 +180,6 @@ class Octopus:
 
         logging.info(f'octopus finished generating the models.')
 
-    # TODO: allow for possibility of different types of optimizers/schedulers for each model
     def initialize_model_components(self):
         logging.info(f'octopus is generating the model components...')
 
@@ -196,8 +194,8 @@ class Octopus:
 
         logging.info(f'octopus finished generating the model components.')
 
-    def setup_pipeline_components(self):
-        logging.info(f'octopus is setting up pipeline components...')
+    def setup_pipeline(self):
+        logging.info(f'octopus is setting up the pipeline...')
 
         # use wandb configs so we can sweep hyperparameters
         config = self.wandbconnector.wandb_config
@@ -212,17 +210,20 @@ class Octopus:
                                               load_from_checkpoint)
 
         # phases
+        logging.info(f'Initializing phases...')
         training_phase = self.phasehandler.get_train_phase(self.devicehandler, self.train_loader, config)
-        val_phase = self.phasehandler.get_train_phase(self.devicehandler, self.val_loader, config)
-        test_phase = self.phasehandler.get_train_phase(self.devicehandler, self.test_loader, config)
+        val_phase = self.phasehandler.get_val_phase(self.devicehandler, self.val_loader, config)
+        test_phase = self.phasehandler.get_test_phase(self.devicehandler, self.test_loader, config, self.output_dir)
 
         # pipeline handler
+        checkpoint_cadence = self.config['checkpoint'].getint('checkpoint_cadence')
+        load_from_checkpoint = self.config['checkpoint'].getboolean('load_from_checkpoint')
+        num_epochs = self.config['hyperparameters'].getint('num_epochs')
+
         if self.config.has_option('checkpoint', 'checkpoint_file'):
             checkpoint_file = self.config['checkpoint']['checkpoint_file']
         else:
             checkpoint_file = None
-        load_from_checkpoint = self.config['checkpoint'].getboolean('load_from_checkpoint')
-        num_epochs = self.config['hyperparameters'].getint('num_epochs')
 
         if self.config.has_option('hyperparameters', 'scheduler_plateau_metric'):
             scheduler_plateau_metric = self.config['hyperparameters']['scheduler_plateau_metric']
@@ -243,31 +244,32 @@ class Octopus:
                                                test_phase,
                                                checkpoint_file,
                                                load_from_checkpoint,
+                                               checkpoint_cadence,
                                                num_epochs,
                                                scheduler_plateau_metric)
 
-        logging.info(f'octopus is finished setting up pipeline components.')
+        logging.info(f'octopus is finished setting up the pipeline.')
 
-    # def run_pipeline(self):
-    #     """
-    #     Run training, validation, and test phases of training for all epochs.
-    #     Note 1:
-    #     Reason behind moving model to device first:
-    #     https://stackoverflow.com/questions/66091226/runtimeerror-expected-all-tensors-to-be-on-the-same-device-but-found-at-least
-    #     Returns: None
-    #     """
-    #     logging.info('octopus is running the pipeline...')
-    #
-    #     self.phasehandler.process_epochs(self.models_list, self.optimizers_list, self.schedulers_list)
-    #
-    #     logging.info('octopus has finished running the pipeline.')
-    #
-    # def cleanup(self):
-    #     """
-    #     Perform any cleanup steps. Stop wandb logging for the current run to enable multiple runs within a single
-    #     execution of run_octopus.py.
-    #     Returns: None
-    #     """
-    #     logging.info(f'octopus is cleaning up...')
-    #     self.wandbconnector.run.finish()  # finish logging for this run
-    #     logging.info('octopus cleanup complete.')
+    def run_pipeline(self):
+        """
+        Run training, validation, and test phases of training for all epochs.
+        Note 1:
+        Reason behind moving model to device first:
+        https://stackoverflow.com/questions/66091226/runtimeerror-expected-all-tensors-to-be-on-the-same-device-but-found-at-least
+        Returns: None
+        """
+        logging.info('octopus is running the pipeline...')
+
+        self.pipelinehandler.process_epochs()
+
+        logging.info('octopus has finished running the pipeline.')
+
+    def cleanup(self):
+        """
+        Perform any cleanup steps. Stop wandb logging for the current run to enable multiple runs within a single
+        execution of run_octopus.py.
+        Returns: None
+        """
+        logging.info(f'octopus is cleaning up...')
+        self.wandbconnector.run.finish()  # finish logging for this run
+        logging.info('octopus cleanup complete.')

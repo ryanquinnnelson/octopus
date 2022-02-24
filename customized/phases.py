@@ -12,13 +12,16 @@ class PhaseHandler:
 
     def get_train_phase(self, devicehandler, train_loader, wandb_config):
         training_phase = Training(devicehandler, train_loader, wandb_config)
+        logging.info(f'Criterion for training phase:' +
+                     f'\ngenerator:{training_phase.sn_criterion}\ndiscriminator:{training_phase.en_criterion}')
         return training_phase
 
     def get_val_phase(self, devicehandler, val_loader, wandb_config):
         validation_phase = Validation(devicehandler, val_loader, wandb_config)
+        logging.info(f'Criterion for validation phase:\ngenerator:{validation_phase.criterion}')
         return validation_phase
 
-    def get_test_phase(self, devicehandler, test_loader,wandb_config, output_dir ):
+    def get_test_phase(self, devicehandler, test_loader, wandb_config, output_dir):
         testing_phase = Testing(wandb_config, devicehandler, output_dir, test_loader)
         return testing_phase
 

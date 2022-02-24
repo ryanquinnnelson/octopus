@@ -25,13 +25,14 @@ output_dir = /Users/ryanqnelson/Desktop/test/output
 [dataloader]
 num_workers=8
 pin_memory=True
-batch_size=2
+batch_size=10
 
 [checkpoint]
 checkpoint_dir = /Users/ryanqnelson/Desktop/test/checkpoints
 delete_existing_checkpoints = True
 load_from_checkpoint=False
 checkpoint_file =  None
+checkpoint_cadence = 2
 
 
 [stats]
@@ -65,7 +66,7 @@ model_type=FlexGAN
 
 
 [hyperparameters]
-num_epochs = 2
+num_epochs = 3
 sn_criterion=CrossEntropyLoss
 en_criterion=CrossEntropyLoss
 optimizer_type=Adam

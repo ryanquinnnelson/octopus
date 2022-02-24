@@ -26,17 +26,10 @@ def main():
     config.read(config_file)
 
     # parse configurations for dataset handler
-    data_dir = config['data']['data_dir']
-    idh = ImageDatasetHandler(data_dir)
-
-    # parse configurations for phase handler
+    idh = ImageDatasetHandler(config['data']['data_dir'])
     ph = PhaseHandler()
-
-    # parse configurations for model handler
     mh = ModelHandler()
-
     oh = OptimizerHandler()
-
     sh = SchedulerHandler()
 
     # run octopus
@@ -47,9 +40,9 @@ def main():
     octopus.load_data()
     octopus.initialize_models()
     octopus.initialize_model_components()
-    octopus.setup_pipeline_components()
-    # octopus.run_pipeline()
-    # octopus.cleanup()
+    octopus.setup_pipeline()
+    octopus.run_pipeline()
+    octopus.cleanup()
 
 
 if __name__ == "__main__":

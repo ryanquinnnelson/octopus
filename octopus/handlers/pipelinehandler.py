@@ -13,7 +13,8 @@ class PipelineHandler:
     def __init__(self, wandbconnector, devicehandler, checkpointhandler,
                  models, optimizers, schedulers, model_names, optimizer_names, scheduler_names,
                  training, validation, testing,
-                 checkpoint_file, load_from_checkpoint, num_epochs, scheduler_plateau_metric=None):
+                 checkpoint_file, load_from_checkpoint, checkpoint_cadence,
+                 num_epochs, scheduler_plateau_metric=None):
         logging.info(f'Initializing phase handler...')
 
         self.devicehandler = devicehandler
@@ -33,6 +34,7 @@ class PipelineHandler:
 
         self.checkpoint_file = checkpoint_file
         self.load_from_checkpoint = load_from_checkpoint
+        self.checkpoint_cadence = checkpoint_cadence
         self.stats = {}
         self.first_epoch = 1
         self.num_epochs = num_epochs
@@ -62,7 +64,7 @@ class PipelineHandler:
                 # create new collection for stats
                 self.stats[key] = [curr_val]
 
-    def update_scheduler(self, scheduler, curr_stats, scheduler_plateau_metric):
+    def update_scheduler(self, scheduler, curr_stats):
         """
         Perform a single scheduler step.
         Args:
@@ -72,7 +74,7 @@ class PipelineHandler:
         Returns: None
         """
         if type(scheduler).__name__ == 'ReduceLROnPlateau':
-            metric_val = curr_stats[scheduler_plateau_metric]
+            metric_val = curr_stats[self.scheduler_plateau_metric]
             scheduler.step(metric_val)
         else:
             scheduler.step()
@@ -140,7 +142,7 @@ class PipelineHandler:
                 self.update_scheduler(self.schedulers[i], curr_stats)
 
             # save model checkpoint
-            if epoch % 5 == 0:
+            if epoch % self.checkpoint_cadence == 0:
                 self.checkpointhandler.save(self.models, self.optimizers, self.schedulers,
                                             self.model_names, self.optimizer_names, self.scheduler_names,
                                             epoch + 1, self.stats)
