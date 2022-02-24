@@ -8,8 +8,6 @@ import logging
 
 import torch
 
-import octopus.utilities.fileutilities as fu
-
 
 class CheckpointHandler:
     """
@@ -37,18 +35,6 @@ class CheckpointHandler:
             logging.info('Overriding delete_existing_checkpoints value. ' +
                          'Existing checkpoints will not be deleted because checkpoint is being loaded for this run.')
             self.delete_existing_checkpoints = False
-
-    def setup_checkpoint_directory(self):
-        """
-        Set up handler. Delete and recreate checkpoint directory if delete_existing_checkpoints=True, otherwise
-        create checkpoint directory.
-        Returns: None
-        """
-        logging.info('Preparing checkpoint directory...')
-        if self.delete_existing_checkpoints:
-            fu.delete_directory(self.checkpoint_dir)
-
-        fu.create_directory(self.checkpoint_dir)
 
     def save(self, models_list, model_names, optimizers, optimizer_names, schedulers, scheduler_names, next_epoch,
              stats):

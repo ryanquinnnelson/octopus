@@ -12,32 +12,87 @@ from torch.utils.data import Dataset
 from PIL import Image
 import torchvision.transforms as transforms
 
-import octopus.utilities.configutilities as cu
+import customized.helper as helper
 
 
-def get_datasets(config):
-    # parse configuration
+class ImageDatasetHandler:
+    def __init__(self, data_dir):
+        """
+        Initialize NumericalDatasetHandler.
+        :param data_dir (str): fully qualified path to root directory inside which data subdirectories are placed
+        :param train_data (str): fully qualified path to training data
+        :param val_data (str): fully qualified path to validation data
+        :param train_class (Dataset): torch Dataset class to use for training data
+        :param val_class (Dataset): torch Dataset class to use for validation data
+        """
 
-    data_dir = config['data']['data_dir']
-    train_dir = config['data']['train_dir']
-    train_target_dir = config['data']['train_target_dir']
-    val_dir = config['data']['val_dir']
-    val_target_dir = config['data']['val_target_dir']
-    test_dir = config['data']['test_dir']
-    test_target_dir = config['data']['test_target_dir']
-    train_transforms = cu.to_string_list(config['data']['transforms_list'])
-    resize_height = config['hyperparameters'].getint('resize_height')
+        self.data_dir = data_dir
 
-    idh = ImageDatasetHandler(data_dir,
-                              train_dir, train_target_dir,
-                              val_dir, val_target_dir,
-                              test_dir, test_target_dir,
-                              train_transforms,resize_height)
+    def get_train_dataset(self, config):
+        """
+        Load training data into memory and initialize the Dataset object.
+        :return: Dataset
+        """
+        # parse configs
+        train_dir = config['data']['train_dir']
+        train_target_dir = config['data']['train_target_dir']
+        train_transforms = helper.to_string_list(config['data']['transforms_list'])
+        resize_height = config['hyperparameters'].getint('resize_height')
 
-    train_dataset = idh.get_train_dataset()
-    val_dataset = idh.get_val_dataset()
-    test_dataset = idh.get_test_dataset()
-    return train_dataset, val_dataset, test_dataset
+        # initialize dataset
+        t = _compose_transforms(train_transforms, resize_height)
+        dataset = ImageDataset(train_dir, train_target_dir, t)
+        logging.info(f'Loaded {len(dataset)} training images.')
+        return dataset
+
+    def get_val_dataset(self, config):
+        """
+        Load validation data into memory and initialize the Dataset object.
+        :return: Dataset
+        """
+        # parse configs
+        val_dir = config['data']['val_dir']
+        val_target_dir = config['data']['val_target_dir']
+        train_transforms = helper.to_string_list(config['data']['transforms_list'])
+        resize_height = config['hyperparameters'].getint('resize_height')
+
+        # determine whether normalize transform should also be applied to validation and test data
+        self.should_normalize_val = True if 'Normalize' in train_transforms else False
+
+        if self.should_normalize_val:
+            logging.info('Normalizing validation data to match normalization of training data...')
+            t = _compose_transforms(['Resize', 'ToTensor', 'Normalize'], resize_height)
+        else:
+            t = _compose_transforms(['Resize', 'ToTensor'], resize_height)
+
+        # initialize dataset
+        dataset = ImageDataset(val_dir, val_target_dir, t)
+        logging.info(f'Loaded {len(dataset)} validation images.')
+        return dataset
+
+    def get_test_dataset(self, config):
+        """
+        Load validation data into memory and initialize the Dataset object.
+        :return: Dataset
+        """
+        # parse configs
+        test_dir = config['data']['test_dir']
+        test_target_dir = config['data']['test_target_dir']
+        train_transforms = helper.to_string_list(config['data']['transforms_list'])
+        resize_height = config['hyperparameters'].getint('resize_height')
+
+        # determine whether normalize transform should also be applied to validation and test data
+        self.should_normalize_test = True if 'Normalize' in train_transforms else False
+        if self.should_normalize_test:
+            logging.info('Normalizing validation data to match normalization of training data...')
+            t = _compose_transforms(['Resize', 'ToTensor', 'Normalize'], resize_height)
+        else:
+            t = _compose_transforms(['Resize', 'ToTensor'], resize_height)
+
+        # initialize dataset
+        dataset = ImageDataset(test_dir, test_target_dir, t)
+        logging.info(f'Loaded {len(dataset)} test images.')
+        return dataset
 
 
 def _apply_transformations(img, target):
@@ -128,81 +183,3 @@ def _compose_transforms(transforms_list, resize_height):
     composition = transforms.Compose(t_list)
 
     return composition
-
-
-class ImageDatasetHandler:
-    def __init__(self, data_dir,
-                 train_dir, train_target_dir,
-                 val_dir, val_target_dir,
-                 test_dir, test_target_dir,
-                 train_transforms, resize_height):
-        """
-        Initialize NumericalDatasetHandler.
-        :param data_dir (str): fully qualified path to root directory inside which data subdirectories are placed
-        :param train_data (str): fully qualified path to training data
-        :param val_data (str): fully qualified path to validation data
-        :param train_class (Dataset): torch Dataset class to use for training data
-        :param val_class (Dataset): torch Dataset class to use for validation data
-        """
-
-
-        self.data_dir = data_dir
-        self.train_dir = train_dir
-        self.train_target_dir = train_target_dir
-        self.val_dir = val_dir
-        self.val_target_dir = val_target_dir
-        self.test_dir = test_dir
-        self.test_target_dir = test_target_dir
-        self.train_transforms = train_transforms
-        self.resize_height = resize_height
-
-        # determine whether normalize transform should also be applied to validation and test data
-        self.should_normalize_val = True if 'Normalize' in train_transforms else False
-        self.should_normalize_test = True if 'Normalize' in train_transforms else False
-
-
-
-    def get_train_dataset(self):
-        """
-        Load training data into memory and initialize the Dataset object.
-        :return: Dataset
-        """
-        # initialize dataset
-        t = _compose_transforms(self.train_transforms, self.resize_height)
-        dataset = ImageDataset(self.train_dir, self.train_target_dir, t)
-        logging.info(f'Loaded {len(dataset)} training images.')
-        return dataset
-
-    def get_val_dataset(self):
-        """
-        Load validation data into memory and initialize the Dataset object.
-        :return: Dataset
-        """
-
-        if self.should_normalize_val:
-            logging.info('Normalizing validation data to match normalization of training data...')
-            t = _compose_transforms(['Resize', 'ToTensor', 'Normalize'], self.resize_height)
-        else:
-            t = _compose_transforms(['Resize', 'ToTensor'], self.resize_height)
-
-        # initialize dataset
-        dataset = ImageDataset(self.val_dir, self.val_target_dir, t)
-        logging.info(f'Loaded {len(dataset)} validation images.')
-        return dataset
-
-    def get_test_dataset(self):
-        """
-        Load validation data into memory and initialize the Dataset object.
-        :return: Dataset
-        """
-
-        if self.should_normalize_test:
-            logging.info('Normalizing validation data to match normalization of training data...')
-            t = _compose_transforms(['Resize', 'ToTensor', 'Normalize'], self.resize_height)
-        else:
-            t = _compose_transforms(['Resize', 'ToTensor'], self.resize_height)
-
-        # initialize dataset
-        dataset = ImageDataset(self.test_dir, self.test_target_dir, t)
-        logging.info(f'Loaded {len(dataset)} test images.')
-        return dataset

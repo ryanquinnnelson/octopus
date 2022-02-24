@@ -5,29 +5,45 @@ __author__ = 'ryanquinnnelson'
 
 import sys
 import os
+import configparser
 
 from octopus.octopus import Octopus
+
+from customized.datasets import ImageDatasetHandler
+from customized.models import ModelHandler
+from customized.phases import PhaseHandler
 
 # execute before loading torch
 os.environ['CUDA_LAUNCH_BLOCKING'] = "1"  # better error tracking from gpu
 
+
 def main():
     # run octopus using config file found in the path
     config_file = sys.argv[1]
+    config = configparser.ConfigParser()
+    config.read(config_file)
+
+    # parse configurations for dataset handler
+    data_dir = config['data']['data_dir']
+    idh = ImageDatasetHandler(data_dir)
+
+    # parse configurations for phase handler
+    ph = PhaseHandler()
+
+    # parse configurations for model handler
+    mh = ModelHandler()
 
     # run octopus
-    octopus = Octopus(config_file)
-    octopus.parse_configuration()
+    octopus = Octopus(config_file, config, idh, ph, mh, None, None)
     octopus.setup_logging()
-    octopus.setup_wandb()
-    octopus.install_packages()
     octopus.setup_environment()
+    octopus.setup_wandb()
     octopus.load_data()
-    octopus.initialize_models()
-    octopus.initialize_model_components()
-    octopus.setup_phasehandler()
-    octopus.run_pipeline()
-    octopus.cleanup()
+    # octopus.initialize_models()
+    # octopus.initialize_model_components()
+    # octopus.setup_phasehandler()
+    # octopus.run_pipeline()
+    # octopus.cleanup()
 
 
 if __name__ == "__main__":

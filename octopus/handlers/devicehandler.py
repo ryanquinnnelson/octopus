@@ -80,9 +80,9 @@ class DeviceHandler:
                 targets = targets.to(device=torch.device('cuda'))
 
         # validate that model and input/targets are on the same device
-        assert next(model.parameters()).device == inputs.device
+        assert next(model.parameters()).devicehandler == inputs.devicehandler
 
         if targets is not None:
-            assert inputs.device == targets.device
+            assert inputs.devicehandler == targets.devicehandler
 
         return inputs, targets

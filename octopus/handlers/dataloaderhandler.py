@@ -13,7 +13,7 @@ class DataLoaderHandler:
     Defines an object to handle DataLoader objects.
     """
 
-    def __init__(self):
+    def __init__(self, batch_size, num_workers, pin_memory):
         """
         Initialize DataLoaderHandler.
         Args:
@@ -23,11 +23,15 @@ class DataLoaderHandler:
         """
         logging.info('Initializing dataloader handler...')
 
+        self.batch_size = batch_size
+        self.num_workers = num_workers
+        self.pin_memory = pin_memory
+
         self.train_args = None
         self.val_args = None
         self.test_args = None
 
-    def define_dataloader_args(self, batch_size, num_workers, pin_memory, device):
+    def define_dataloader_args(self, device):
         """
         Set DataLoader hyperparameters based on device. Use the same values for validation and test DataLoader
         hyperparameters.
@@ -38,25 +42,25 @@ class DataLoaderHandler:
         # set arguments based on GPU or CPU destination
         if device.type == 'cuda':
             self.train_args = dict(shuffle=True,
-                                   batch_size=batch_size,
-                                   num_workers=num_workers,
-                                   pin_memory=pin_memory,
+                                   batch_size=self.batch_size,
+                                   num_workers=self.num_workers,
+                                   pin_memory=self.pin_memory,
                                    drop_last=True)
         else:
             self.train_args = dict(shuffle=True,
-                                   batch_size=batch_size,
+                                   batch_size=self.batch_size,
                                    drop_last=True)
 
         # set arguments based on GPU or CPU destination
         if device.type == 'cuda':
             self.val_args = dict(shuffle=False,
-                                 batch_size=batch_size,
-                                 num_workers=num_workers,
-                                 pin_memory=pin_memory,
+                                 batch_size=self.batch_size,
+                                 num_workers=self.num_workers,
+                                 pin_memory=self.pin_memory,
                                  drop_last=True)
         else:
             self.val_args = dict(shuffle=False,
-                                 batch_size=batch_size,
+                                 batch_size=self.batch_size,
                                  drop_last=True)
 
         self.test_args = self.val_args  # test and validation have matching arguments

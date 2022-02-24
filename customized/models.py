@@ -3,6 +3,10 @@ import logging
 import torch.nn as nn
 
 
+class ModelHandler:
+    def __init__(self):
+        pass
+
 # TODO: revise models to modular, accept argument for which model type to use
 def get_models(wandb_config):
     sn = SegmentationNetwork()

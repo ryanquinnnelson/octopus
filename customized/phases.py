@@ -5,11 +5,22 @@ import torch
 import torch.nn as nn
 
 
-def get_phases(wandb_config, devicehandler, outputhandler, train_loader, val_loader, test_loader):
-    training_phase = Training(wandb_config, devicehandler, train_loader)
-    validation_phase = Validation(wandb_config, devicehandler, val_loader)
-    testing_phase = Testing(wandb_config, devicehandler, outputhandler, test_loader)
-    return training_phase, validation_phase, testing_phase
+class PhaseHandler:
+
+    def __init__(self):
+        pass
+
+    def get_train_phase(self, devicehandler, train_loader, wandb_config):
+        training_phase = Training(devicehandler, train_loader, wandb_config)
+        return training_phase
+
+    def get_val_phase(self, devicehandler, val_loader, wandb_config):
+        validation_phase = Validation(devicehandler, val_loader, wandb_config)
+        return validation_phase
+
+    def get_test_phase(self, devicehandler, test_loader,wandb_config, output_dir ):
+        testing_phase = Testing(wandb_config, devicehandler, output_dir, test_loader)
+        return testing_phase
 
 
 def get_criterion(criterion_type):
@@ -22,7 +33,6 @@ def get_criterion(criterion_type):
 
 
 def calculate_num_hits(i, targets, out):
-
     # convert out to class labels
     labels_out = out.argmax(axis=1)
     if i == 0:
@@ -73,9 +83,9 @@ def _d_loss(pred, criterion, annotated=True):
 
 
 class Training:
-    def __init__(self, wandb_config, devicehandler, train_loader):
+    def __init__(self, devicehandler, dataloader, wandb_config):
         self.devicehandler = devicehandler
-        self.train_loader = train_loader
+        self.dataloader = dataloader
 
         self.sn_criterion = get_criterion(wandb_config.sn_criterion)
         self.en_criterion = get_criterion(wandb_config.en_criterion)
@@ -105,7 +115,7 @@ class Training:
         d_model.train()
 
         # process mini-batches
-        for i, (inputs, targets) in enumerate(self.train_loader):
+        for i, (inputs, targets) in enumerate(self.dataloader):
             logging.info(f'training batch:{i}')
             # prep
             g_optimizer.zero_grad()
@@ -151,10 +161,10 @@ class Training:
             total_g_train_loss += g_loss.item()
 
         # calculate average loss across all mini-batches
-        total_g_train_loss /= len(self.train_loader)
-        total_d_train_loss /= len(self.train_loader)
-        total_d_train_loss_unannotated /= len(self.train_loader)
-        total_d_train_loss_annotated /= len(self.train_loader)
+        total_g_train_loss /= len(self.dataloader)
+        total_d_train_loss /= len(self.dataloader)
+        total_d_train_loss_unannotated /= len(self.dataloader)
+        total_d_train_loss_annotated /= len(self.dataloader)
 
         # build stat dictionary
         g_lr = g_optimizer.state_dict()["param_groups"][0]["lr"]
@@ -221,9 +231,9 @@ class Training:
 
 
 class Validation:
-    def __init__(self, wandb_config, devicehandler, val_loader):
+    def __init__(self, devicehandler, dataloader, wandb_config):
         self.devicehandler = devicehandler
-        self.val_loader = val_loader
+        self.dataloader = dataloader
         self.criterion = get_criterion(wandb_config.sn_criterion)
 
         logging.info(f'Generator criterion for validation phase:\n{self.criterion}')
@@ -243,7 +253,7 @@ class Validation:
             g_model.eval()
 
             # process mini-batches
-            for i, (inputs, targets) in enumerate(self.val_loader):
+            for i, (inputs, targets) in enumerate(self.dataloader):
                 logging.info(f'validation batch:{i}')
 
                 # prep
@@ -272,10 +282,10 @@ class Validation:
 
             # calculate average evaluation metrics per mini-batch
             pixels_per_image = out_shape[2] * out_shape[3]
-            possible_hits = len(self.val_loader.dataset) * pixels_per_image
+            possible_hits = len(self.dataloader.dataset) * pixels_per_image
             val_acc = total_hits / possible_hits
-            total_val_loss /= len(self.val_loader)
-            total_iou_score /= len(self.val_loader.dataset)
+            total_val_loss /= len(self.dataloader)
+            total_iou_score /= len(self.dataloader.dataset)
 
             # build stats dictionary
             stats = {'val_loss': total_val_loss, 'val_acc': val_acc, 'val_iou_score': total_iou_score}

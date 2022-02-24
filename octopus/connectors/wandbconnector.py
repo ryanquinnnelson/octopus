@@ -4,11 +4,9 @@ All things related to wandb.
 __author__ = 'ryanquinnnelson'
 
 import logging
-import subprocess
 
 import pandas as pd
 
-import octopus.utilities.fileutilities as fu
 
 
 class WandbConnector:
@@ -48,9 +46,6 @@ class WandbConnector:
         """
 
         logging.info('Initializing wandb...')
-
-        # ensure wandb_dir exists
-        fu.create_directory(self.wandb_dir)
 
         import wandb
         self.run = wandb.init(dir=self.wandb_dir,
