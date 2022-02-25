@@ -96,3 +96,18 @@ batch_size=10
 num_epochs = 4
 
 ```
+
+
+## Additional functionality
+This package contains two scripts to perform common tasks on AWS EC2 instances.
+
+Mounts a NFS drive that comes with an EC2 instance.
+```commandline
+bash /path/to/octopus/bin/mount_drive
+```
+
+
+Installs and logs into wandb, both of which are required to use wandb in octopus. Also required so sweeps can be performed.
+```commandline
+bash /path/to/octopus/bin/setup_wandb
+```
