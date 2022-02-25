@@ -3,7 +3,7 @@
 # Author: ryanquinnnelson
 
 usage() {
-  echo 'usage: setup_environment [-h]'
+  echo 'usage: setup_wandb [-h]'
 }
 
 description() {
