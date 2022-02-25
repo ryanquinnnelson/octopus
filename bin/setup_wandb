@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+
+# Author: ryanquinnnelson
+
+usage() {
+  echo 'usage: setup_wandb [-h]'
+}
+
+description() {
+  d=$(
+    cat <<EOF
+
+Installs wandb and any other dependencies, then logs into wandb.
+
+EOF
+  )
+  echo "$d"
+}
+
+# read in arguments
+# source: https://sookocheff.com/post/bash/parsing-bash-script-arguments-with-shopts/
+while getopts ":hd:" opt; do
+  case ${opt} in
+  h)
+    usage
+    description
+    exit
+    ;;
+  ?)
+    echo "unknown option: $OPTARG" 1>&2
+    usage
+    exit 1
+    ;;
+  esac
+done
+shift $((OPTIND - 1))
+
+# install wandb
+echo 'pip install --upgrade wandb==0.10.8'
+pip install --upgrade wandb==0.10.8
+
+# log into wandb
+wandb login
