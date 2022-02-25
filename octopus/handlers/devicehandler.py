@@ -1,5 +1,5 @@
 """
-All things related to device.
+All things related to torch.device.
 """
 __author__ = 'ryanquinnnelson'
 
@@ -15,7 +15,7 @@ class DeviceHandler:
 
     def __init__(self):
         """
-        Initialize DeviceHandler.
+        Initialize DeviceHandler. Define device based on environment.
         """
         logging.info('Initializing device handler...')
         self.device = None
@@ -35,8 +35,8 @@ class DeviceHandler:
 
     def move_model_to_device(self, model):
         """
-        Move model to GPU if GPU is available.
-        Avoids duplication issue with moving to device.
+        Move model to GPU if GPU is available.<br>
+        Avoids duplication issue with moving to device:
         "Note that calling my_tensor.to(device) returns a new copy of my_tensor on GPU. It does NOT overwrite my_tensor.
         Therefore, remember to manually overwrite tensors: my_tensor = my_tensor.to(torch.device('cuda'))."
         https://pytorch.org/tutorials/beginner/saving_loading_models.html#what-is-a-state-dict
@@ -53,16 +53,17 @@ class DeviceHandler:
     def move_data_to_device(self, model, inputs, targets=None):
         """
         Move input and target to device if GPU is available and target is available, otherwise move input to device if
-        GPU is available.
-        Avoids duplication issue with moving to device.
+        GPU is available.<br>
+        Avoids duplication issue with moving to device:
         "Note that calling my_tensor.to(device) returns a new copy of my_tensor on GPU. It does NOT overwrite my_tensor.
         Therefore, remember to manually overwrite tensors: my_tensor = my_tensor.to(torch.device('cuda'))."
         https://pytorch.org/tutorials/beginner/saving_loading_models.html#what-is-a-state-dict
         Args:
             model (nn.Module): model already moved to device
             inputs (Tensor): inputs data to move to device
-            targets (Tensor): targets data to move to device, if any. Set as None if no targets data is available.
-        Returns: Tuple (Tensor,Tensor) representing (inputs, targets).
+            targets (Tensor): targets data to move to device, if any. Set to None if no targets data is available.
+        Returns: Tuple (Tensor,Tensor) representing (inputs, targets). If targets is None, second position in Tuple will
+        be None.
         """
 
         # send input and targets to device

@@ -1,14 +1,50 @@
+"""
+All things related to running a deep learning pipeline.
+"""
+__author__ = 'ryanquinnnelson'
+
 import logging
 import time
 
 
-# TODO: check against early stopping criteria
+# TODO: add check against early stopping criteria
 class PipelineHandler:
+    """
+    Defines an object that manages the phases of the deep learning pipeline.
+    """
     def __init__(self, wandbconnector, devicehandler, checkpointhandler,
                  models, optimizers, schedulers, model_names, optimizer_names, scheduler_names,
                  training, validation, testing,
                  checkpoint_file, load_from_checkpoint, checkpoint_cadence,
                  num_epochs, scheduler_plateau_metric=None):
+        """
+        Initialize a PipelineHandler object.
+        Args:
+            wandbconnector (WandbConnector): manages connection to wandb
+            devicehandler (DeviceHandler): manages torch.device
+            checkpointhandler (CheckpointHandler): manages checkpoint saving and loading
+            models (Collection[torch.nn.Module]): Collection of models to save.
+            optimizers (Collection[torch.optim]): Collection of optimizers to save.
+            schedulers (Collection[torch.optim]): Collection of schedulers to save.
+            model_names (Collection[String]): Collection of name to use for each model when saving. Length must match that of models.
+            optimizer_names (Collection[String]):Collection of name to use for each optimizer when saving. Length must match that of optimizers.
+            scheduler_names (Collection[String]):Collection of name to use for each scheduler when saving. Length must match that of schedulers.
+
+            training (Training):Python class which implements the following methods:<br>
+            - run_epoch(epoch, num_epochs, models, optimizers) -> Dict<br><br>
+
+            validation (Validation):Python class which implements the following methods:<br>
+            - run_epoch(epoch, num_epochs, models) -> Dict<br><br>
+
+            testing (Testing): Python class which implements the following methods:<br>
+            - run_epoch(epoch, num_epochs, models) -> Dict<br><br>
+
+            checkpoint_file (str): Fully-qualified filename of checkpoint file to be loaded, if any
+            load_from_checkpoint (Boolean): True if model environment should be loaded from a previously saved checkpoint
+            checkpoint_cadence (int): Number of training epochs to complete before saving another checkpoint.
+            num_epochs (int): Number of epochs to train
+            scheduler_plateau_metric (str): Name of the metric the scheduler checks during step(), if necessary. Default value is None.
+        """
         logging.info(f'Initializing phase handler...')
 
         self.devicehandler = devicehandler
@@ -35,6 +71,13 @@ class PipelineHandler:
         self.scheduler_plateau_metric = scheduler_plateau_metric
 
     def _load_checkpoint(self):
+        """
+        Load model environment from previous checkpoint. Replace stats dictionary with stats dictionary recovered
+        from checkpoint and update first epoch to next epoch value recovered from checkpoint.
+
+        Returns: None
+
+        """
         device = self.devicehandler.get_device()
         checkpoint = self.checkpointhandler.load(self.checkpoint_file, device, self.models, self.optimizers,
                                                  self.schedulers,
@@ -47,6 +90,15 @@ class PipelineHandler:
         self.first_epoch = checkpoint['next_epoch']
 
     def _append_stats(self, curr_stats_dict):
+        """
+        For each epoch stored in the stats dictionary, send all metrics for that epoch to wandb.
+
+        Args:
+            curr_stats_dict (Dict): current dictionary of stats
+
+        Returns:
+
+        """
 
         for key in curr_stats_dict.keys():
             curr_val = curr_stats_dict[key]
@@ -60,7 +112,7 @@ class PipelineHandler:
 
     def _update_scheduler(self, scheduler, curr_stats):
         """
-        Perform a single scheduler step.
+        Perform a single scheduler step. Check scheduler_plateau_metric from current stats if necessary.
         Args:
             scheduler (nn.optim): scheduler to step
             curr_stats (Dictionary): dictionary of latest run stats from which the latest scheduler_plateau_metric value should be
@@ -76,8 +128,6 @@ class PipelineHandler:
     def _report_previous_stats(self):
         """
         For each epoch stored in the stats dictionary, send all metrics for that epoch to wandb.
-        Args:
-            wandbconnector (WandbConnector): connection to wandb
         Returns: None
         """
         logging.info('Reporting previous stats...')
@@ -89,6 +139,13 @@ class PipelineHandler:
             self.wandbconnector.log_stats(epoch_stats_dict)
 
     def process_epochs(self):
+        """
+        Run models phases for all epochs. Load model from checkpoint first if necessary and submit all previous
+        stats to wandb. Save checkpoints according to the specified cadence.
+
+        Returns:
+
+        """
 
         # load checkpoint if necessary
         if self.load_from_checkpoint:

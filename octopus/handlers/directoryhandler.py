@@ -1,5 +1,5 @@
 """
-Common utilities.
+All things related to creating and deleting files and directories.
 """
 __author__ = 'ryanquinnnelson'
 
@@ -9,12 +9,16 @@ import shutil
 
 
 class DirectoryHandler:
+    """
+    Defines an object that manages the creation and deletion of files and directories.
+    """
+
     def __init__(self):
         logging.info(f'Initializing directory handler....')
 
     def create_directory(self, path):
         """
-        Creates directory if it does not exist.
+        Create directory if it does not exist.
         Args:
             path (str): fully qualified path to the directory
         Returns: None
@@ -28,7 +32,7 @@ class DirectoryHandler:
 
     def delete_directory(self, path):
         """
-        Deletes directory if it exists.
+        Delete directory if it exists.
         Args:
             path (str): fully qualified path to the directory
         Returns:None
@@ -42,7 +46,7 @@ class DirectoryHandler:
 
     def delete_file(self, path):
         """
-        Deletes file if it exists.
+        Delete file if it exists.
         Args:
             path (str): fully qualified path to the file
         Returns:None

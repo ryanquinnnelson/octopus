@@ -1,9 +1,12 @@
-import logging
+"""
+All things related to parsing ConfigParser arguments into proper datatypes.
+"""
+__author__ = 'ryanquinnnelson'
 
 
 def to_int_list(s):
     """
-    Builds an integer list from a comma-separated string of integers.
+    Build an integer list from a comma-separated string of integers.
     Args:
         s (str): comma-separated string of integers
     Returns:List
@@ -14,7 +17,7 @@ def to_int_list(s):
 
 def to_string_list(s):
     """
-    Builds a list of strings from a comma-separated string.
+    Build a list of strings from a comma-separated string.
     Args:
         s (str): comma-separated string of strings
     Returns:List
@@ -25,7 +28,7 @@ def to_string_list(s):
 
 def to_int_dict(s):
     """
-    Builds a dictionary where each value is an integer, given a comma-separated string of key=value pairs. If a value
+    Build a dictionary where each value is an integer, given a comma-separated string of key=value pairs. If a value
     cannot be converted to an integer, leaves the value as a string.
     Args:
         s (str): comma-separated string of key=value pairs (i.e. key1=1,key2=2)
@@ -41,6 +44,7 @@ def to_int_dict(s):
         # try converting the value to an int
         try:
             val = int(val)
+            continue # skip additional attempts to parse the type
         except ValueError:
             pass  # leave as string
 
@@ -51,7 +55,7 @@ def to_int_dict(s):
 
 def to_float_dict(s):
     """
-    Builds a dictionary where each value is a float, given a comma-separated string of key=value pairs. If a value
+    Build a dictionary where each value is a float, given a comma-separated string of key=value pairs. If a value
     cannot be converted to a float, leaves the value as a string.
     Args:
         s (str): comma-separated string of key=value pairs (i.e. key1=1,key2=2)
@@ -67,6 +71,7 @@ def to_float_dict(s):
         # try converting the value to a float
         try:
             val = float(val)
+            continue # skip additional attempts to parse the type
         except ValueError:
             pass  # leave as string
 
@@ -76,6 +81,16 @@ def to_float_dict(s):
 
 
 def to_mixed_dict(s):
+    """
+    Build a dictionary where strings are converted to integers, floats, and boolean values (in that order) if they
+    can be. Once a value is converted into one type, no additional conversions are attempted for that value.
+
+    Args:
+        s (str): comma-separated string of key=value pairs (i.e. key1=1,key2=2)
+
+    Returns: Dict
+
+    """
     d = dict()
 
     pairs = s.split(',')
@@ -116,6 +131,16 @@ def to_mixed_dict(s):
 
 
 def convert_configs_to_correct_type(config):
+    """
+    Build a dictionary where strings are converted to integers, floats, and boolean values (in that order) if they
+    can be. Once a value is converted into one type, no additional conversions are attempted for that value.
+
+    Args:
+        config (Dict): Dictionary of key-value pairs.
+
+    Returns:Dict
+
+    """
     corrected_config = {}
     for key in config.keys():
         val = config[key]

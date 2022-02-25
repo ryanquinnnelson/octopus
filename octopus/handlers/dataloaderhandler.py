@@ -1,5 +1,5 @@
 """
-All things related to data reading and writing.
+All things related to loading Dataset objects.
 """
 __author__ = 'ryanquinnnelson'
 
@@ -20,6 +20,7 @@ class DataLoaderHandler:
             batch_size (int): batch size regardless of a GPU or CPU
             num_workers (int): number of workers for use in DataLoader when a GPU is available
             pin_memory (Boolean): True if DataLoader should use pin memory when a GPU is available
+            device (torch.device): define the type of device data will be loaded onto
         """
         logging.info('Initializing dataloader handler...')
 
@@ -73,7 +74,7 @@ class DataLoaderHandler:
 
     def train_dataloader(self, dataset):
         """
-        Obtain DataLoader for training dataset.
+        Obtain DataLoader for given training dataset.
         Args:
             dataset (Dataset): defines training data
         Returns: DataLoader
@@ -83,7 +84,7 @@ class DataLoaderHandler:
 
     def val_dataloader(self, dataset):
         """
-        Obtain DataLoader for validation dataset.
+        Obtain DataLoader for given validation dataset.
         Args:
             dataset (Dataset): defines validation data
         Returns: DataLoader
@@ -93,7 +94,7 @@ class DataLoaderHandler:
 
     def test_dataloader(self, dataset):
         """
-        Obtain DataLoader for test dataset.
+        Obtain DataLoader for given test dataset.
         Args:
             dataset (Dataset): defines validation data
         Returns: DataLoader
@@ -102,6 +103,16 @@ class DataLoaderHandler:
         return dl
 
     def load_data(self, train_dataset, val_dataset, test_dataset):
+        """
+        Obtain DataLoader objects for training, validation, and test datasets, in that order.
+        Args:
+            train_dataset (Dataset): defines training data
+            val_dataset (Dataset): defines validation data
+            test_dataset (Dataset): defines test data
+
+        Returns: (DataLoader, DataLoader,DataLoader) corresponding to (training, validation, test)
+
+        """
 
         logging.info('Loading datahandlers...')
 

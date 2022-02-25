@@ -1,12 +1,11 @@
 """
-All things related to wandb.
+All things related to wandb (Weights & Biases).
 """
 __author__ = 'ryanquinnnelson'
 
 import logging
 
 import pandas as pd
-
 
 
 class WandbConnector:
@@ -17,6 +16,7 @@ class WandbConnector:
     def __init__(self, wandb_dir, entity, run_name, project, notes, tags, mode, config):
         """
         Initialize wandb connector.
+
         Args:
             wandb_dir (str): fully-qualified directory where kaggle internal files will be stored (provides user control
         over their directories)
@@ -25,6 +25,8 @@ class WandbConnector:
             project (str): project name where runs will be stored on wandb
             notes (str): notes to store with this run
             tags (List): list of strings representing tags for wandb
+            mode (str): 'online' if wandb should send data to the website in real time. 'offline' if wandb is down and
+            storage of results must be made locally only.
             config (Dict): dictionary of all hyperparameter configurations set for this run
         """
         logging.info('Initializing wandb connector...')
@@ -36,13 +38,13 @@ class WandbConnector:
         self.tags = tags
         self.mode = mode  # set mode to offline if online mode is failing
         self.config = config
-        self.wandb_config = None
+        self.wandb_config = None  # defines configuration sent to wandb which can be modified by wandb during sweeps
         self.run = None
 
     def initialize_wandb(self):
         """
         Initialize wandb connection. Define reinitialization to True.
-        Returns:wandb.config object
+        Returns:None
         """
 
         logging.info('Initializing wandb...')

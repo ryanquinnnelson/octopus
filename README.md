@@ -1,5 +1,7 @@
 # octopus
-Framework for training deep learning models
+## Summary
+`octopus` is a framework for training deep learning models.
+
 
 
 ## Using `octopus`
@@ -13,6 +15,42 @@ from octopus.octopus import Octopus
 # run octopus
 octopus = Octopus(config_file, config, datasethandler, phasehandler, modelhandler, optimizerhandler, schedulerhandler)
 octopus.run()
+```
+
+## Handler requirements
+The required handlers must have the following interface. 
+```
+# dataset handler
+datasethandler.get_train_dataset(config) -> torch.utils.data.Dataset
+datasethandler.get_val_dataset(config) -> torch.utils.data.Dataset
+datasethandler.get_test_dataset(config) -> torch.utils.data.Dataset
+
+
+# phase handler
+phasehandler.get_train_phase(devicehandler, dataloader, config) -> Training
+phasehandler.get_val_phase(devicehandler, dataloader, config) -> Validation
+phasehandler.get_test_phase(devicehandler, dataloader, config, output_dir) -> Testing
+
+Training.run_epoch(epoch, num_epochs, models, optimizers) -> Dict  # {'train_loss': 35.54 }
+Validation.run_epoch(epoch, num_epochs, models) -> Dict
+Testing.run_epoch(epoch, num_epochs, models) -> Dict
+
+
+# model handler
+modelhandler.get_models(config) -> 
+(Collection[torch.nn.Module], Collection[String])  # (models, model_names)
+
+
+# optimizer handler
+optimizerhandler.get_optimizers(models, config) -> 
+(Collection[torch.optim], Collection[String])  # (optimizers, optimizer_names)
+
+
+# scheduler handler
+schedulerhandler.get_schedulers(optimizers, config) -> 
+(Collection[torch.optim as optim], Collection[String])  # (schedulers, scheduler_names)
+
+
 ```
 
 ## configuration file requirements

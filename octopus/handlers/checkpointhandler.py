@@ -38,6 +38,22 @@ class CheckpointHandler:
 
     def save(self, models, optimizers, schedulers, model_names, optimizer_names, scheduler_names, next_epoch,
              stats):
+        """
+        Save current model environment to a checkpoint.
+
+        Args:
+            models (Collection[torch.nn.Module]): Collection of deep learning models to save.
+            optimizers (Collection[torch.optim]):
+            schedulers (Collection[torch.optim]):
+            model_names (Collection[String]): Collection of name to use for each model when saving. Length must match that of models.
+            optimizer_names (Collection[String]):Collection of name to use for each optimizer when saving. Length must match that of optimizers.
+            scheduler_names (Collection[String]):Collection of name to use for each scheduler when saving. Length must match that of schedulers.
+            next_epoch (int):next epoch to execute if this model is restored
+            stats (Dict): dictionary of statistics for all epochs collected during model training to this point
+
+        Returns: None
+
+        """
 
         # build filename
         filename = os.path.join(self.checkpoint_dir, f'{self.run_name}.checkpoint.{next_epoch - 1}.pt')
@@ -69,6 +85,22 @@ class CheckpointHandler:
 
     def load(self, filename, device, models, optimizers, schedulers, model_names, optimizer_names,
              scheduler_names):
+        """
+        Load a previously saved model environment from a checkpoint file, mapping the load based on the device.
+
+        Args:
+            filename (str): fully-qualified filename of checkpoint file
+            device (torch.device): device on which model was previously running
+            models (Collection[torch.nn.Module]): Collection of models to save.
+            optimizers (Collection[torch.optim]): Collection of optimizers to save.
+            schedulers (Collection[torch.optim]): Collection of schedulers to save.
+            model_names (Collection[String]): Collection of name to use for each model when saving. Length must match that of models.
+            optimizer_names (Collection[String]):Collection of name to use for each optimizer when saving. Length must match that of optimizers.
+            scheduler_names (Collection[String]):Collection of name to use for each scheduler when saving. Length must match that of schedulers.
+
+        Returns: None
+
+        """
 
         logging.info(f'Loading checkpoint from {filename}...')
         checkpoint = torch.load(filename, map_location=device)
