@@ -1,6 +1,29 @@
 # octopus
-## Summary
-`octopus` is a framework for training deep learning models.
+Author: Ryan Nelson
+
+```text
+               _---_
+             /       \
+            |         |
+    _--_    |         |    _--_
+   /__  \   \  0   0  /   /  __\
+      \  \   \       /   /  /
+       \  -__-       -__-  /
+   |\   \    __     __    /   /|
+   | \___----         ----___/ |
+   \                           /
+    --___--/    / \    \--___--
+          /    /   \    \
+    --___-    /     \    -___--
+    \_    __-         -__    _/
+      ----               ----
+       
+        O  C  T  O  P  U  S
+```
+
+## Introduction
+
+`octopus` is a python module that standardizes the execution of deep learning pipelines using `pytorch` and  `wandb`. Module behavior is controlled using a configuration file (ConfigParser format).
 
 
 
@@ -95,4 +118,19 @@ batch_size=10
 [hyperparameters]
 num_epochs = 4
 
+```
+
+
+## Additional functionality
+This package contains two scripts to perform common tasks on AWS EC2 instances.
+
+Mounts a NFS drive that comes with an EC2 instance.
+```commandline
+bash /path/to/octopus/bin/mount_drive
+```
+
+
+Installs and logs into wandb, both of which are required to use wandb in octopus. Also required so sweeps can be performed.
+```commandline
+bash /path/to/octopus/bin/setup_wandb
 ```
