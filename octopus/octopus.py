@@ -4,6 +4,7 @@ Manages the process of generating and training of deep learning models.
 __author__ = 'ryanquinnnelson'
 
 import logging
+import torch
 
 import octopus.utilities.configutilities as cu
 from octopus.connectors.wandbconnector import WandbConnector
@@ -234,11 +235,18 @@ class Octopus:
             m = self.devicehandler.move_model_to_device(model)  # move before optimizer init - Note 1
             moved_models.append(m)
 
-            # track model
-            self.wandbconnector.watch(model)
-
         # replace collection of models with moved version
         self.models = moved_models
+
+        # if self.devicehandler.device.type == 'cuda':
+        #     # TODO: parameterize this functionality to make back into generic framework
+        #     self.models[1](torch.ones(2, 4, 224, 332).cuda(), 0)  # dummy run for EN to initialize any lazy parameters
+        #     logging.info(f'EN after dummy:{self.models[1]}')
+
+        for model in self.models:
+
+            # track model
+            self.wandbconnector.watch(model)
 
         logging.info(f'octopus finished generating the models.')
 
