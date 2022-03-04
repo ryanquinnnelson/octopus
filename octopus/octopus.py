@@ -162,7 +162,7 @@ class Octopus:
         test_dataset = self.datasethandler.get_test_dataset(self.config)
 
         # dataloader
-        batch_size = self.config['dataloader'].getint('batch_size')
+        batch_size = self.wandbconnector.wandb_config.batch_size
         num_workers = self.config['dataloader'].getint('num_workers')
         pin_memory = self.config['dataloader'].getboolean('pin_memory')
         device = self.devicehandler.get_device()

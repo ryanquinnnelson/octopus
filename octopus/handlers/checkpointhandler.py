@@ -36,6 +36,7 @@ class CheckpointHandler:
                          'Existing checkpoints will not be deleted because checkpoint is being loaded for this run.')
             self.delete_existing_checkpoints = False
 
+    # TODO: redesign so you can control which models are saved for a given checkpoint
     def save(self, models, optimizers, schedulers, model_names, optimizer_names, scheduler_names, next_epoch,
              stats):
         """
@@ -66,7 +67,7 @@ class CheckpointHandler:
         }
 
         # save state for each model, optimizer, scheduler combination
-        for i, model in enumerate(models):
+        for i, model in enumerate(models[:1]):
             model_name = model_names[i]
             # logging.info(f'model_name:{model_name}')
             checkpoint[model_name] = model.state_dict()
@@ -83,6 +84,7 @@ class CheckpointHandler:
 
         torch.save(checkpoint, filename)
 
+    # TODO: redesign so you can control which models are loaded from a given checkpoint
     def load(self, filename, device, models, optimizers, schedulers, model_names, optimizer_names,
              scheduler_names):
         """
@@ -106,7 +108,7 @@ class CheckpointHandler:
         checkpoint = torch.load(filename, map_location=device)
 
         # reload saved state for each model, optimizer, scheduler combination
-        for i, model in enumerate(models):
+        for i, model in enumerate(models[:1]):
             model_name = model_names[i]
             # logging.info(f'model_name:{model_name}')
             model.load_state_dict(checkpoint[model_name])
