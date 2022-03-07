@@ -67,7 +67,7 @@ class CheckpointHandler:
         }
 
         # save state for each model, optimizer, scheduler combination
-        for i, model in enumerate(models[:1]):
+        for i, model in enumerate(models):
             model_name = model_names[i]
             # logging.info(f'model_name:{model_name}')
             checkpoint[model_name] = model.state_dict()
@@ -108,7 +108,7 @@ class CheckpointHandler:
         checkpoint = torch.load(filename, map_location=device)
 
         # reload saved state for each model, optimizer, scheduler combination
-        for i, model in enumerate(models[:1]):
+        for i, model in enumerate(models):
             model_name = model_names[i]
             # logging.info(f'model_name:{model_name}')
             model.load_state_dict(checkpoint[model_name])
