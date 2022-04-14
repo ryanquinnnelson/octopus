@@ -244,7 +244,6 @@ class Octopus:
         #     logging.info(f'EN after dummy:{self.models[1]}')
 
         for model in self.models:
-
             # track model
             self.wandbconnector.watch(model)
 
@@ -284,6 +283,11 @@ class Octopus:
         # use wandb configs so we can sweep hyperparameters
         config = self.wandbconnector.wandb_config
 
+        # pretraining
+        num_pretraining_epochs = self.config['hyperparameters'].getint('num_pretraining_epochs')
+        reset_schedulers_after_pretraining = self.config['hyperparameters'].getboolean(
+            'reset_schedulers_after_pretraining')
+
         # checkpointing
         checkpoint_dir = self.config['checkpoint']['checkpoint_dir']
         delete_existing_checkpoints = self.config['checkpoint'].getboolean('delete_existing_checkpoints')
@@ -314,23 +318,12 @@ class Octopus:
         else:
             scheduler_plateau_metric = None
 
-        self.pipelinehandler = PipelineHandler(self.wandbconnector,
-                                               self.devicehandler,
-                                               checkpointhandler,
-                                               self.models,
-                                               self.optimizers,
-                                               self.schedulers,
-                                               self.model_names,
-                                               self.optimizer_names,
-                                               self.scheduler_names,
-                                               training_phase,
-                                               val_phase,
-                                               test_phase,
-                                               checkpoint_file,
-                                               load_from_checkpoint,
-                                               checkpoint_cadence,
-                                               num_epochs,
-                                               scheduler_plateau_metric)
+        self.pipelinehandler = PipelineHandler(self.wandbconnector, self.devicehandler, checkpointhandler, self.models,
+                                               self.optimizers, self.schedulers, self.model_names, self.optimizer_names,
+                                               self.scheduler_names, training_phase, val_phase, test_phase,
+                                               checkpoint_file, load_from_checkpoint, checkpoint_cadence, num_epochs,
+                                               num_pretraining_epochs,
+                                               reset_schedulers_after_pretraining, scheduler_plateau_metric)
 
         logging.info(f'octopus is finished setting up the pipeline.')
 

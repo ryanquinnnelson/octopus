@@ -5,6 +5,7 @@ __author__ = 'ryanquinnnelson'
 
 import logging
 import time
+import torch.optim as optim
 
 
 # TODO: add check against early stopping criteria
@@ -12,14 +13,15 @@ class PipelineHandler:
     """
     Defines an object that manages the phases of the deep learning pipeline.
     """
-    def __init__(self, wandbconnector, devicehandler, checkpointhandler,
-                 models, optimizers, schedulers, model_names, optimizer_names, scheduler_names,
-                 training, validation, testing,
-                 checkpoint_file, load_from_checkpoint, checkpoint_cadence,
-                 num_epochs, scheduler_plateau_metric=None):
+
+    def __init__(self, wandbconnector, devicehandler, checkpointhandler, models, optimizers, schedulers, model_names,
+                 optimizer_names, scheduler_names, training, validation, testing, checkpoint_file, load_from_checkpoint,
+                 checkpoint_cadence, num_epochs, num_pretraining_epochs, reset_schedulers_after_pretraining,
+                 scheduler_plateau_metric=None):
         """
         Initialize a PipelineHandler object.
         Args:
+            reset_schedulers_after_pretraining:
             wandbconnector (WandbConnector): manages connection to wandb
             devicehandler (DeviceHandler): manages torch.device
             checkpointhandler (CheckpointHandler): manages checkpoint saving and loading
@@ -43,6 +45,8 @@ class PipelineHandler:
             load_from_checkpoint (Boolean): True if model environment should be loaded from a previously saved checkpoint
             checkpoint_cadence (int): Number of training epochs to complete before saving another checkpoint.
             num_epochs (int): Number of epochs to train
+            num_pretraining_epochs (int): Number of epochs to perform pretraining
+            reset_schedulers_after_pretraining (Boolean): True if schedulers should be reset after pretraining
             scheduler_plateau_metric (str): Name of the metric the scheduler checks during step(), if necessary. Default value is None.
         """
         logging.info(f'Initializing phase handler...')
@@ -69,6 +73,8 @@ class PipelineHandler:
         self.first_epoch = 1
         self.num_epochs = num_epochs
         self.scheduler_plateau_metric = scheduler_plateau_metric
+        self.num_pretraining_epochs = num_pretraining_epochs
+        self.reset_schedulers_after_pretraining = reset_schedulers_after_pretraining
 
     def _load_checkpoint(self):
         """
@@ -125,6 +131,43 @@ class PipelineHandler:
         else:
             scheduler.step()
 
+    def _reset_schedulers(self, schedulers, optimizers):
+        reset_schedulers = []
+        for i in range(len(schedulers)):
+            scheduler_i = schedulers[i]
+            optimizer_i = optimizers[i]
+            reset_scheduler = self._reset_scheduler(scheduler_i, optimizer_i)
+            reset_schedulers.append(reset_scheduler)
+
+        return reset_schedulers
+
+    def _reset_scheduler(self, scheduler, optimizer):
+        """
+        Reinitialize scheduler for given optimizer with the same hyperparameters.
+
+        Args:
+            scheduler (nn.optim): Scheduler to reinitialize
+            optimizer (nn.optim): Optimizer that matches with the scheduler
+
+        Returns:
+
+        """
+        reset_scheduler = None
+        if type(scheduler).__name__ == 'ReduceLROnPlateau':
+            # get properties
+            mode = scheduler.state_dict()['mode']
+            factor = scheduler.state_dict()['factor']
+            patience = scheduler.state_dict()['patience']
+            min_lr = scheduler.state_dict()['min_lr']
+            verbose = scheduler.state_dict()['verbose']
+
+            reset_scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode=mode, factor=factor,
+                                                                   patience=patience,
+                                                                   min_lr=min_lr, verbose=verbose)
+
+        logging.info(f'Scheduler reset:\n{reset_scheduler}\n{reset_scheduler.state_dict()}')
+        return reset_scheduler
+
     def _report_previous_stats(self):
         """
         For each epoch stored in the stats dictionary, send all metrics for that epoch to wandb.
@@ -159,6 +202,10 @@ class PipelineHandler:
 
             # record start time
             start = time.time()
+
+            # determine if scheduler must be reset
+            if self.reset_schedulers_after_pretraining and epoch == self.num_pretraining_epochs + 1:
+                self.schedulers = self._reset_schedulers(self.schedulers, self.optimizers)
 
             # train
             train_stats = self.training.run_epoch(epoch, self.num_epochs, self.models, self.optimizers)
