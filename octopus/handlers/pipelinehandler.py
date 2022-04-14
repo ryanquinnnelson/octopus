@@ -15,8 +15,8 @@ class PipelineHandler:
     """
 
     def __init__(self, wandbconnector, devicehandler, checkpointhandler, models, optimizers, schedulers, model_names,
-                 optimizer_names, scheduler_names, training, validation, testing, checkpoint_file, load_from_checkpoint,
-                 checkpoint_cadence, num_epochs, num_pretraining_epochs, reset_schedulers_after_pretraining,
+                 optimizer_names, scheduler_names, optimizerhandler, schedulerhandler, training, validation, testing, checkpoint_file, load_from_checkpoint,
+                 checkpoint_cadence, num_epochs, n_pretraining_epochs, reset_schedulers_after_pretraining,
                  scheduler_plateau_metric=None):
         """
         Initialize a PipelineHandler object.
@@ -32,6 +32,16 @@ class PipelineHandler:
             optimizer_names (Collection[String]):Collection of name to use for each optimizer when saving. Length must match that of optimizers.
             scheduler_names (Collection[String]):Collection of name to use for each scheduler when saving. Length must match that of schedulers.
 
+            optimizerhandler (OptimizerHandler):Python class which implements the following methods:<br>
+               - get_optimizers(models, config) -> (Collection[torch.optim], Collection[String])<br>
+                 where the tuple represents (optimizers, optimizer_names). The number and order of optimizers must
+                 match the number and order of their corresponding models.<br><br>
+
+            schedulerhandler (SchedulerHandler):Python class which implements the following methods:<br>
+               - get_schedulers(optimizers, config) -> (Collection[torch.optim as optim], Collection[String])<br>
+                 where the tuple represents (schedulers, scheduler_names). The number and order of schedulers must
+                 match the number and order of their corresponding optimizers.<br><br>
+
             training (Training):Python class which implements the following methods:<br>
             - run_epoch(epoch, num_epochs, models, optimizers) -> Dict<br><br>
 
@@ -45,7 +55,7 @@ class PipelineHandler:
             load_from_checkpoint (Boolean): True if model environment should be loaded from a previously saved checkpoint
             checkpoint_cadence (int): Number of training epochs to complete before saving another checkpoint.
             num_epochs (int): Number of epochs to train
-            num_pretraining_epochs (int): Number of epochs to perform pretraining
+            n_pretraining_epochs (int): Number of epochs to perform pretraining
             reset_schedulers_after_pretraining (Boolean): True if schedulers should be reset after pretraining
             scheduler_plateau_metric (str): Name of the metric the scheduler checks during step(), if necessary. Default value is None.
         """
@@ -61,6 +71,8 @@ class PipelineHandler:
         self.model_names = model_names
         self.optimizer_names = optimizer_names
         self.scheduler_names = scheduler_names
+        self.optimizerhandler = optimizerhandler
+        self.schedulerhandler = schedulerhandler
 
         self.training = training
         self.validation = validation
@@ -73,7 +85,7 @@ class PipelineHandler:
         self.first_epoch = 1
         self.num_epochs = num_epochs
         self.scheduler_plateau_metric = scheduler_plateau_metric
-        self.num_pretraining_epochs = num_pretraining_epochs
+        self.n_pretraining_epochs = n_pretraining_epochs
         self.reset_schedulers_after_pretraining = reset_schedulers_after_pretraining
 
     def _load_checkpoint(self):
@@ -131,42 +143,15 @@ class PipelineHandler:
         else:
             scheduler.step()
 
-    def _reset_schedulers(self, schedulers, optimizers):
-        reset_schedulers = []
-        for i in range(len(schedulers)):
-            scheduler_i = schedulers[i]
-            optimizer_i = optimizers[i]
-            reset_scheduler = self._reset_scheduler(scheduler_i, optimizer_i)
-            reset_schedulers.append(reset_scheduler)
+    def _reset_components(self):
+        # use wandb configs so we can sweep hyperparameters
+        config = self.wandbconnector.wandb_config
 
-        return reset_schedulers
+        # optimizers
+        self.optimizers, self.optimizer_names = self.optimizerhandler.reset_optimizers(self.models, config)
 
-    def _reset_scheduler(self, scheduler, optimizer):
-        """
-        Reinitialize scheduler for given optimizer with the same hyperparameters.
-
-        Args:
-            scheduler (nn.optim): Scheduler to reinitialize
-            optimizer (nn.optim): Optimizer that matches with the scheduler
-
-        Returns:
-
-        """
-        reset_scheduler = None
-        if type(scheduler).__name__ == 'ReduceLROnPlateau':
-            # get properties
-            mode = scheduler.state_dict()['mode']
-            factor = scheduler.state_dict()['factor']
-            patience = scheduler.state_dict()['patience']
-            min_lr = scheduler.state_dict()['min_lr']
-            verbose = scheduler.state_dict()['verbose']
-
-            reset_scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode=mode, factor=factor,
-                                                                   patience=patience,
-                                                                   min_lr=min_lr, verbose=verbose)
-
-        logging.info(f'Scheduler reset:\n{reset_scheduler}\n{reset_scheduler.state_dict()}')
-        return reset_scheduler
+        # schedulers
+        self.schedulers, self.scheduler_names = self.schedulerhandler.reset_schedulers(self.optimizers, config)
 
     def _report_previous_stats(self):
         """
@@ -204,8 +189,8 @@ class PipelineHandler:
             start = time.time()
 
             # determine if scheduler must be reset
-            if self.reset_schedulers_after_pretraining and epoch == self.num_pretraining_epochs + 1:
-                self.schedulers = self._reset_schedulers(self.schedulers, self.optimizers)
+            if self.reset_schedulers_after_pretraining and epoch == self.n_pretraining_epochs + 1:
+                self._reset_components()
 
             # train
             train_stats = self.training.run_epoch(epoch, self.num_epochs, self.models, self.optimizers)
